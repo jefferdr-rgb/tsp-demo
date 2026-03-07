@@ -11,7 +11,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "mammoth": "^1.8.0",
-    "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0",
     "jszip": "^3.10.1",
     "pdfjs-dist": "^4.4.168"
   },
