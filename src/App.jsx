@@ -45,6 +45,7 @@ const Icons = {
   send: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
   bell: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
   search: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  upload: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
 };
 
 // ══════════════════════════════════════════════════
@@ -71,6 +72,8 @@ export default function Dashboard() {
   const [time, setTime] = useState(new Date());
   const [totalMessages, setTotalMessages] = useState(0);
   const [gated, setGated] = useState(false);
+  const [dragOver, setDragOver] = useState(null);
+  const [chatDragOver, setChatDragOver] = useState(false);
   const MAX_MESSAGES = 5;
 
   useEffect(() => {
@@ -83,6 +86,45 @@ export default function Dashboard() {
     if (h < 12) return "Good morning";
     if (h < 17) return "Good afternoon";
     return "Good evening";
+  };
+
+  // ══════════════════════════════════════════════════
+  // FILE DROP HANDLING
+  // ══════════════════════════════════════════════════
+  const readFileAsText = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+
+  const handleFileDrop = async (taskId, files) => {
+    if (!files || !files.length) return;
+    const file = files[0];
+    setActiveTask(taskId);
+    setMessages([]);
+    setError("");
+    try {
+      const content = await readFileAsText(file);
+      const preview = content.slice(0, 8000);
+      const truncated = content.length > 8000 ? "\n\n[File truncated — showing first 8,000 characters]" : "";
+      setInput(`I'm sharing a file: "${file.name}"\n\n${preview}${truncated}`);
+    } catch {
+      setInput(`I'm sharing a file: "${file.name}" — please help me work with this.`);
+    }
+  };
+
+  const handleChatFileDrop = async (files) => {
+    if (!files || !files.length) return;
+    const file = files[0];
+    try {
+      const content = await readFileAsText(file);
+      const preview = content.slice(0, 8000);
+      const truncated = content.length > 8000 ? "\n\n[File truncated]" : "";
+      setInput(prev => (prev ? prev + "\n\n" : "") + `File: "${file.name}"\n\n${preview}${truncated}`);
+    } catch {
+      setInput(prev => (prev ? prev + "\n\n" : "") + `File: "${file.name}"`);
+    }
   };
 
   const handleSubmit = async () => {
@@ -308,37 +350,54 @@ export default function Dashboard() {
             {!activeTask && (
               <div style={{ maxWidth: 900, animation: "fadeIn 0.4s ease" }}>
                 <h1 style={{ fontSize: 26, fontWeight: 800, color: T.beige, margin: "0 0 4px", letterSpacing: "-0.01em" }}>{greeting()}</h1>
-                <p style={{ fontSize: 14, color: T.textMuted, margin: "0 0 28px", fontWeight: 300 }}><span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> is ready. What do you need help with?</p>
+                <p style={{ fontSize: 14, color: T.textMuted, margin: "0 0 28px", fontWeight: 300 }}>
+                  <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> is ready. What do you need help with?{" "}
+                  <span style={{ color: T.textDim, fontSize: 12 }}>Drag a file onto any tile to get started.</span>
+                </p>
 
                 {/* Task Grid */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginBottom: 32 }}>
-                  {TASKS.map((t, i) => (
-                    <div key={t.id}
-                      onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); }}
-                      style={{
-                        background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12,
-                        padding: "22px 20px", cursor: "pointer", transition: "all 0.25s",
-                        animation: `fadeIn 0.4s ease ${i * 0.05}s both`,
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = T.borderLight; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.2)`; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
-                    >
-                      <div style={{
-                        width: 40, height: 40, borderRadius: 10,
-                        background: t.id === "rhonda" ? T.goldDim : T.surfaceHover,
-                        border: `1px solid ${t.id === "rhonda" ? T.goldBorder : T.border}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        color: t.color, marginBottom: 14,
-                      }}>{t.icon}</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: T.beige, marginBottom: 5 }}>
-                        {t.id === "rhonda" ? <span>Ask <span style={{ color: T.gold }}>RHONDA</span></span> : t.label}
+                  {TASKS.map((t, i) => {
+                    const isDropTarget = dragOver === t.id;
+                    return (
+                      <div key={t.id}
+                        onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); }}
+                        onDragOver={e => { e.preventDefault(); setDragOver(t.id); }}
+                        onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(null); }}
+                        onDrop={e => { e.preventDefault(); setDragOver(null); handleFileDrop(t.id, e.dataTransfer.files); }}
+                        style={{
+                          background: isDropTarget ? T.goldDim : T.surface,
+                          border: `${isDropTarget ? 2 : 1}px solid ${isDropTarget ? T.gold : T.border}`,
+                          borderRadius: 12,
+                          padding: isDropTarget ? "21px 19px" : "22px 20px",
+                          cursor: "pointer", transition: "all 0.2s",
+                          animation: `fadeIn 0.4s ease ${i * 0.05}s both`,
+                          transform: isDropTarget ? "translateY(-3px) scale(1.01)" : "translateY(0)",
+                          boxShadow: isDropTarget ? `0 12px 32px rgba(196,155,42,0.2)` : "none",
+                        }}
+                        onMouseEnter={e => { if (!isDropTarget) { e.currentTarget.style.borderColor = T.borderLight; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.2)`; } }}
+                        onMouseLeave={e => { if (!isDropTarget) { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; } }}
+                      >
+                        <div style={{
+                          width: 40, height: 40, borderRadius: 10,
+                          background: isDropTarget ? T.goldDim : (t.id === "rhonda" ? T.goldDim : T.surfaceHover),
+                          border: `1px solid ${isDropTarget || t.id === "rhonda" ? T.goldBorder : T.border}`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: isDropTarget ? T.gold : t.color, marginBottom: 14,
+                          transition: "all 0.2s",
+                        }}>
+                          {isDropTarget ? Icons.upload : t.icon}
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: T.beige, marginBottom: 5 }}>
+                          {t.id === "rhonda" ? <span>Ask <span style={{ color: T.gold }}>RHONDA</span></span> : t.label}
+                        </div>
+                        <div style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.5 }}>{t.description}</div>
+                        <div style={{ marginTop: 14, fontSize: 11, fontWeight: 600, color: T.gold, display: "flex", alignItems: "center", gap: 4 }}>
+                          {isDropTarget ? "Drop to upload →" : "Open →"}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.5 }}>{t.description}</div>
-                      <div style={{ marginTop: 14, fontSize: 11, fontWeight: 600, color: T.gold, display: "flex", alignItems: "center", gap: 4 }}>
-                        Open →
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Quick Stats */}
@@ -383,7 +442,16 @@ export default function Dashboard() {
                 </div>
 
                 {/* Chat */}
-                <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, overflow: "hidden" }}>
+                <div
+                  style={{
+                    background: chatDragOver ? T.goldDim : T.surface,
+                    border: `${chatDragOver ? 2 : 1}px solid ${chatDragOver ? T.gold : T.border}`,
+                    borderRadius: 14, overflow: "hidden", transition: "all 0.2s",
+                  }}
+                  onDragOver={e => { e.preventDefault(); setChatDragOver(true); }}
+                  onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setChatDragOver(false); }}
+                  onDrop={e => { e.preventDefault(); setChatDragOver(false); handleChatFileDrop(e.dataTransfer.files); }}
+                >
                   <div style={{ minHeight: 300, maxHeight: 480, overflow: "auto", padding: 20 }}>
                     {messages.length === 0 && !loading && (
                       <div style={{ textAlign: "center", padding: "60px 20px" }}>
@@ -392,12 +460,18 @@ export default function Dashboard() {
                           background: T.goldDim, border: `1px solid ${T.goldBorder}`,
                           display: "flex", alignItems: "center", justifyContent: "center",
                           color: T.gold, margin: "0 auto 16px",
-                        }}>{task.icon}</div>
+                        }}>{chatDragOver ? Icons.upload : task.icon}</div>
                         <div style={{ fontSize: 14, fontWeight: 500, color: T.textMuted, marginBottom: 6 }}>
-                          {task.id === "rhonda" ? <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> anything</span> : <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
+                          {chatDragOver
+                            ? <span style={{ color: T.gold, fontWeight: 700 }}>Drop your file here</span>
+                            : task.id === "rhonda"
+                              ? <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> anything</span>
+                              : <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
                         </div>
                         <div style={{ fontSize: 12, color: T.textDim, maxWidth: 360, margin: "0 auto", lineHeight: 1.6 }}>
-                          Type your request below and <span style={{ color: T.gold, fontWeight: 600 }}>RHONDA</span> will get to work.
+                          {chatDragOver
+                            ? "Release to load the file into this conversation."
+                            : <span>Type your request below, or <span style={{ color: T.gold }}>drag a file</span> anywhere here.</span>}
                         </div>
                       </div>
                     )}
@@ -447,7 +521,7 @@ export default function Dashboard() {
                   {/* Input */}
                   <div style={{ borderTop: `1px solid ${T.border}`, padding: "14px 18px", display: "flex", alignItems: "flex-end", gap: 10, background: T.bgAlt }}>
                     <textarea value={input} onChange={e => setInput(e.target.value)}
-                      placeholder={messages.length === 0 ? task.placeholder.split("\n")[0] : "Type your follow-up..."}
+                      placeholder={messages.length === 0 ? task.placeholder.split("\n")[0] : "Type your follow-up, or drag a file here..."}
                       rows={2}
                       style={{
                         flex: 1, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10,
