@@ -30,7 +30,7 @@ const T = {
 // ══════════════════════════════════════════════════
 // SYSTEM PROMPT
 // ══════════════════════════════════════════════════
-const SYSTEM_PROMPT = `You are Rhonda, the AI office manager for this business. You help with emails, data organization, document summaries, customer replies, scheduling, and any other business task. You are warm, professional, and efficient. Keep responses concise and action-oriented. When drafting emails, match a professional but friendly tone. When organizing data, be thorough. When summarizing documents, flag key dates, amounts, and anything unusual.`;
+const SYSTEM_PROMPT = `You are Rhonda, the AI office manager for this business. You help with emails, data organization, document summaries, customer replies, scheduling, and any other business task. Be warm, professional, and concise.`;
 
 // ══════════════════════════════════════════════════
 // ICONS
@@ -158,7 +158,8 @@ async function downloadXLSX(rows, filename = "rhonda-data.xlsx") {
 
 async function parseFile(file) {
   const ext = file.name.split(".").pop().toLowerCase();
-  const truncate = (text, max = 10000) =>
+  // Keep file extracts short — large content gets re-sent on every follow-up message
+  const truncate = (text, max = 3000) =>
     text.length > max
       ? text.slice(0, max) + `\n\n[Truncated — showing first ${max.toLocaleString()} of ${text.length.toLocaleString()} characters]`
       : text;
@@ -242,13 +243,16 @@ async function parseFile(file) {
 // TASK DEFINITIONS
 // ══════════════════════════════════════════════════
 const TASKS = [
-  { id: "email", label: "Email", icon: Icons.email, color: T.gold, description: "Draft, read, and send emails", placeholder: "What email do you need?\n\nExample: \"Write a follow-up to a customer about their recent installation\"", systemExtra: "The user needs an email drafted. Write a professional, warm email. Include a subject line. Keep it concise." },
-  { id: "data", label: "Sheets", icon: Icons.data, color: T.green, description: "Organize job data and spreadsheets", placeholder: "What data do you need organized?\n\nExample: \"Organize last month's jobs by type and add revenue totals\"", systemExtra: "Help organize business data. CRITICAL: whenever you present tabular data, ALWAYS format it as a markdown table using | pipe | characters | like this |, with a separator row (|---|---|). This is required so the user can export directly to Google Sheets or Excel. After the table, provide a brief insight or summary." },
-  { id: "docs", label: "Drive", icon: Icons.docs, color: "#6495ED", description: "Find and summarize documents", placeholder: "What document do you need?\n\nExample: \"Summarize this vendor contract and flag anything unusual\"", systemExtra: "Summarize documents in plain English. Flag key dates, dollar amounts, action items, and anything unusual." },
+  { id: "email", label: "Email", icon: Icons.email, color: T.gold, description: "Draft, read, and send emails", placeholder: "What email do you need?\n\nExample: \"Write a follow-up to a customer about their recent installation\"", systemExtra: "Draft a professional, warm email. Include a subject line. Be concise." },
+  { id: "data", label: "Sheets", icon: Icons.data, color: T.green, description: "Organize job data and spreadsheets", placeholder: "What data do you need organized?\n\nExample: \"Organize last month's jobs by type and add revenue totals\"", systemExtra: "Organize business data. ALWAYS format tabular data as a markdown table using | pipe | characters | with a separator row (|---|---|) so the user can export to Google Sheets or Excel." },
+  { id: "docs", label: "Drive", icon: Icons.docs, color: "#6495ED", description: "Find and summarize documents", placeholder: "What document do you need?\n\nExample: \"Summarize this vendor contract and flag anything unusual\"", systemExtra: "Summarize in plain English. Flag key dates, dollar amounts, action items, and anything unusual." },
   { id: "calendar", label: "Calendar", icon: Icons.calendar, color: "#E8C96A", description: "Manage events and scheduling", placeholder: "What do you need with the calendar?\n\nExample: \"Find an open slot next Tuesday for a job estimate\"", systemExtra: "Help manage the calendar. Confirm details before creating events." },
   { id: "customers", label: "Customers", icon: Icons.customers, color: T.beigeMuted, description: "Handle customer questions and responses", placeholder: "Paste the customer message or describe the situation...\n\nExample: \"A customer says our quote is too high — help me respond\"", systemExtra: "Draft professional, solution-oriented customer responses. Be confident but never defensive." },
-  { id: "rhonda", label: "Ask RHONDA", icon: Icons.ai, color: T.gold, description: "General questions — anything you need", placeholder: "Ask RHONDA anything...\n\nExample: \"Help me write a job posting\" or \"What should I include in a bid proposal?\"", systemExtra: "General question. Be helpful, direct, and practical.", goldLabel: true },
+  { id: "rhonda", label: "Ask RHONDA", icon: Icons.ai, color: T.gold, description: "General questions — anything you need", placeholder: "Ask RHONDA anything...\n\nExample: \"Help me write a job posting\" or \"What should I include in a bid proposal?\"", systemExtra: "Be helpful, direct, and practical.", goldLabel: true },
 ];
+
+// Only send the last N messages to the API to avoid re-sending large file content
+const HISTORY_LIMIT = 4;
 
 // ══════════════════════════════════════════════════
 // MAIN DASHBOARD
@@ -325,13 +329,15 @@ export default function Dashboard() {
     const newMessages = [...messages, userMsg];
     setMessages(newMessages); setInput(""); setTotalMessages(prev => prev + 1);
     try {
+      // Only send the most recent messages to avoid re-sending large file content
+      const apiMessages = newMessages.slice(-HISTORY_LIMIT);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 1000,
-          system: SYSTEM_PROMPT + "\n\n" + (task?.systemExtra || ""),
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          model: "claude-haiku-4-5-20251001", max_tokens: 700,
+          system: SYSTEM_PROMPT + (task?.systemExtra ? "\n\n" + task.systemExtra : ""),
+          messages: apiMessages.map(m => ({ role: m.role, content: m.content })),
         }),
       });
       const data = await res.json();
