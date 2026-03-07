@@ -49,6 +49,123 @@ const Icons = {
 };
 
 // ══════════════════════════════════════════════════
+// FILE FORMAT SUPPORT
+// ══════════════════════════════════════════════════
+const FILE_LABELS = {
+  // Plain text
+  txt: "Text", md: "Markdown", json: "JSON", csv: "CSV", html: "HTML", xml: "XML",
+  // Microsoft Office
+  docx: "Word", doc: "Word", xlsx: "Excel", xls: "Excel", pptx: "PowerPoint",
+  // Google Workspace exports (same formats)
+  // PDF
+  pdf: "PDF",
+};
+
+const SUPPORTED_EXTENSIONS = Object.keys(FILE_LABELS);
+
+async function parseFile(file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  const truncate = (text, max = 10000) =>
+    text.length > max ? text.slice(0, max) + `\n\n[Truncated — showing first ${max.toLocaleString()} characters of ${text.length.toLocaleString()} total]` : text;
+
+  // ── Plain text formats ──────────────────────────
+  if (["txt", "md", "json", "csv", "html", "xml"].includes(ext)) {
+    const text = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsText(file);
+    });
+    return truncate(text);
+  }
+
+  // ── Word (.docx) — also Google Docs export ──────
+  if (ext === "docx") {
+    const mammoth = await import("mammoth");
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
+    return truncate(result.value || "(No readable text found in document)");
+  }
+
+  // ── Excel (.xlsx, .xls) — also Google Sheets export ──
+  if (["xlsx", "xls"].includes(ext)) {
+    const XLSX = await import("xlsx");
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    let out = "";
+    for (const name of wb.SheetNames) {
+      out += `\n### Sheet: ${name}\n`;
+      out += XLSX.utils.sheet_to_csv(wb.Sheets[name]);
+    }
+    return truncate(out.trim() || "(No data found in spreadsheet)");
+  }
+
+  // ── PowerPoint (.pptx) — also Google Slides export ──
+  if (ext === "pptx") {
+    const { default: JSZip } = await import("jszip");
+    const buf = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(buf);
+    const slideFiles = Object.keys(zip.files)
+      .filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+      .sort((a, b) => {
+        const na = parseInt(a.match(/(\d+)/)[1]);
+        const nb = parseInt(b.match(/(\d+)/)[1]);
+        return na - nb;
+      });
+    let out = "";
+    for (const slideName of slideFiles) {
+      const xml = await zip.files[slideName].async("text");
+      const texts = [...xml.matchAll(/<a:t[^>]*>([^<]+)<\/a:t>/g)]
+        .map(m => m[1].trim())
+        .filter(Boolean);
+      if (texts.length) {
+        const num = slideName.match(/(\d+)/)[1];
+        out += `\nSlide ${num}: ${texts.join(" ")}\n`;
+      }
+    }
+    return truncate(out.trim() || "(No readable text found in presentation)");
+  }
+
+  // ── PDF ─────────────────────────────────────────
+  if (ext === "pdf") {
+    try {
+      const pdfjsLib = await import("pdfjs-dist");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      let out = "";
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(i => i.str).join(" ");
+        if (pageText.trim()) out += `\nPage ${p}:\n${pageText}\n`;
+      }
+      return truncate(out.trim() || "(No readable text found in PDF)");
+    } catch {
+      return `[PDF: "${file.name}" — could not extract text. Try exporting as .docx or .txt.]`;
+    }
+  }
+
+  // ── Legacy Word (.doc) — binary, not parseable client-side ──
+  if (ext === "doc") {
+    return `[Legacy .doc file: "${file.name}" — please save as .docx for best results.]`;
+  }
+
+  // ── Fallback: try as plain text ─────────────────
+  try {
+    const text = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsText(file);
+    });
+    return truncate(text);
+  } catch {
+    return `[File: "${file.name}" — format not supported. Supported: Word, Excel, PowerPoint, PDF, CSV, and plain text.]`;
+  }
+}
+
+// ══════════════════════════════════════════════════
 // TASK DEFINITIONS
 // ══════════════════════════════════════════════════
 const TASKS = [
@@ -68,6 +185,7 @@ export default function Dashboard() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
   const [time, setTime] = useState(new Date());
   const [totalMessages, setTotalMessages] = useState(0);
@@ -88,42 +206,35 @@ export default function Dashboard() {
     return "Good evening";
   };
 
-  // ══════════════════════════════════════════════════
-  // FILE DROP HANDLING
-  // ══════════════════════════════════════════════════
-  const readFileAsText = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result);
-    reader.onerror = reject;
-    reader.readAsText(file);
-  });
-
+  // ── File Drop Handlers ───────────────────────────
   const handleFileDrop = async (taskId, files) => {
     if (!files || !files.length) return;
     const file = files[0];
     setActiveTask(taskId);
     setMessages([]);
     setError("");
+    setParsing(true);
     try {
-      const content = await readFileAsText(file);
-      const preview = content.slice(0, 8000);
-      const truncated = content.length > 8000 ? "\n\n[File truncated — showing first 8,000 characters]" : "";
-      setInput(`I'm sharing a file: "${file.name}"\n\n${preview}${truncated}`);
+      const content = await parseFile(file);
+      setInput(`I'm sharing a file: "${file.name}"\n\n${content}`);
     } catch {
       setInput(`I'm sharing a file: "${file.name}" — please help me work with this.`);
+    } finally {
+      setParsing(false);
     }
   };
 
   const handleChatFileDrop = async (files) => {
     if (!files || !files.length) return;
     const file = files[0];
+    setParsing(true);
     try {
-      const content = await readFileAsText(file);
-      const preview = content.slice(0, 8000);
-      const truncated = content.length > 8000 ? "\n\n[File truncated]" : "";
-      setInput(prev => (prev ? prev + "\n\n" : "") + `File: "${file.name}"\n\n${preview}${truncated}`);
+      const content = await parseFile(file);
+      setInput(prev => (prev ? prev + "\n\n" : "") + `File: "${file.name}"\n\n${content}`);
     } catch {
       setInput(prev => (prev ? prev + "\n\n" : "") + `File: "${file.name}"`);
+    } finally {
+      setParsing(false);
     }
   };
 
@@ -142,9 +253,7 @@ export default function Dashboard() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
@@ -250,8 +359,6 @@ export default function Dashboard() {
 
         {/* ══════ SIDEBAR ══════ */}
         <div style={{ width: 240, background: "#2c3528", borderRight: `1px solid #3a4a35`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-          
-          {/* Logo */}
           <div style={{ padding: "22px 18px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
@@ -273,7 +380,6 @@ export default function Dashboard() {
 
           <div style={{ height: 1, background: "#3a4a35", margin: "0 14px" }} />
 
-          {/* Nav */}
           <div style={{ padding: "12px 8px", flex: 1 }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: "#6b7e6a", letterSpacing: "0.15em", textTransform: "uppercase", padding: "6px 10px", marginBottom: 4 }}>Tools</div>
             {TASKS.map(t => {
@@ -301,7 +407,6 @@ export default function Dashboard() {
             })}
           </div>
 
-          {/* Bottom */}
           <div style={{ padding: "14px 18px", borderTop: `1px solid #3a4a35` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ECDC4", boxShadow: `0 0 8px #4ECDC4`, animation: "pulse 2s infinite" }} />
@@ -350,9 +455,12 @@ export default function Dashboard() {
             {!activeTask && (
               <div style={{ maxWidth: 900, animation: "fadeIn 0.4s ease" }}>
                 <h1 style={{ fontSize: 26, fontWeight: 800, color: T.beige, margin: "0 0 4px", letterSpacing: "-0.01em" }}>{greeting()}</h1>
-                <p style={{ fontSize: 14, color: T.textMuted, margin: "0 0 28px", fontWeight: 300 }}>
+                <p style={{ fontSize: 14, color: T.textMuted, margin: "0 0 6px", fontWeight: 300 }}>
                   <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> is ready. What do you need help with?{" "}
                   <span style={{ color: T.textDim, fontSize: 12 }}>Drag a file onto any tile to get started.</span>
+                </p>
+                <p style={{ fontSize: 11, color: T.textDim, margin: "0 0 24px" }}>
+                  Supports: Word · Excel · PowerPoint · PDF · CSV · Google Docs · Google Sheets · Google Slides
                 </p>
 
                 {/* Task Grid */}
@@ -453,7 +561,7 @@ export default function Dashboard() {
                   onDrop={e => { e.preventDefault(); setChatDragOver(false); handleChatFileDrop(e.dataTransfer.files); }}
                 >
                   <div style={{ minHeight: 300, maxHeight: 480, overflow: "auto", padding: 20 }}>
-                    {messages.length === 0 && !loading && (
+                    {messages.length === 0 && !loading && !parsing && (
                       <div style={{ textAlign: "center", padding: "60px 20px" }}>
                         <div style={{
                           width: 52, height: 52, borderRadius: 14,
@@ -468,10 +576,21 @@ export default function Dashboard() {
                               ? <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> anything</span>
                               : <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
                         </div>
-                        <div style={{ fontSize: 12, color: T.textDim, maxWidth: 360, margin: "0 auto", lineHeight: 1.6 }}>
+                        <div style={{ fontSize: 12, color: T.textDim, maxWidth: 400, margin: "0 auto", lineHeight: 1.6 }}>
                           {chatDragOver
                             ? "Release to load the file into this conversation."
-                            : <span>Type your request below, or <span style={{ color: T.gold }}>drag a file</span> anywhere here.</span>}
+                            : <span>Type your request, or <span style={{ color: T.gold }}>drag a file</span> — Word, Excel, PowerPoint, PDF, CSV supported.</span>}
+                        </div>
+                      </div>
+                    )}
+
+                    {parsing && (
+                      <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                        <div style={{ fontSize: 13, color: T.textMuted, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            {[0, 1, 2].map(d => (<div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: T.gold, animation: `bounce 1.2s ease ${d * 0.15}s infinite` }} />))}
+                          </div>
+                          Reading file...
                         </div>
                       </div>
                     )}
@@ -532,13 +651,13 @@ export default function Dashboard() {
                       onBlur={e => e.target.style.borderColor = T.border}
                       onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
                     />
-                    <button onClick={handleSubmit} disabled={loading || !input.trim()}
+                    <button onClick={handleSubmit} disabled={loading || parsing || !input.trim()}
                       style={{
-                        background: loading || !input.trim() ? T.surface : `linear-gradient(135deg, ${T.gold}, #B8912E)`,
+                        background: loading || parsing || !input.trim() ? T.surface : `linear-gradient(135deg, ${T.gold}, #B8912E)`,
                         border: "none", borderRadius: 10, width: 42, height: 42,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        cursor: loading || !input.trim() ? "default" : "pointer",
-                        color: loading || !input.trim() ? T.textDim : T.bg, flexShrink: 0,
+                        cursor: loading || parsing || !input.trim() ? "default" : "pointer",
+                        color: loading || parsing || !input.trim() ? T.textDim : T.bg, flexShrink: 0,
                       }}>{Icons.send}</button>
                   </div>
                 </div>
