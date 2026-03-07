@@ -96,14 +96,57 @@ function rowsToTSV(rows) {
 }
 
 async function downloadXLSX(rows, filename = "rhonda-data.xlsx") {
-  const XLSX = await import("xlsx");
+  const XLSX = await import("xlsx-js-style");
+
+  const HEADER = {
+    font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 },
+    fill: { patternType: "solid", fgColor: { rgb: "2C3528" } },
+    border: {
+      top: { style: "thin", color: { rgb: "AAAAAA" } },
+      bottom: { style: "thin", color: { rgb: "AAAAAA" } },
+      left: { style: "thin", color: { rgb: "AAAAAA" } },
+      right: { style: "thin", color: { rgb: "AAAAAA" } },
+    },
+    alignment: { vertical: "center", wrapText: true },
+  };
+  const ROW_EVEN = {
+    fill: { patternType: "solid", fgColor: { rgb: "F4F1EA" } },
+    border: {
+      top: { style: "thin", color: { rgb: "D6D1C4" } },
+      bottom: { style: "thin", color: { rgb: "D6D1C4" } },
+      left: { style: "thin", color: { rgb: "D6D1C4" } },
+      right: { style: "thin", color: { rgb: "D6D1C4" } },
+    },
+    alignment: { vertical: "center", wrapText: true },
+  };
+  const ROW_ODD = {
+    fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
+    border: {
+      top: { style: "thin", color: { rgb: "D6D1C4" } },
+      bottom: { style: "thin", color: { rgb: "D6D1C4" } },
+      left: { style: "thin", color: { rgb: "D6D1C4" } },
+      right: { style: "thin", color: { rgb: "D6D1C4" } },
+    },
+    alignment: { vertical: "center", wrapText: true },
+  };
+
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  // Auto-size columns
+  const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const ref = XLSX.utils.encode_cell({ r: R, c: C });
+      if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+      ws[ref].s = R === 0 ? HEADER : (R % 2 === 1 ? ROW_EVEN : ROW_ODD);
+    }
+  }
   if (rows[0]) {
     ws["!cols"] = rows[0].map((_, ci) => ({
-      wch: Math.min(60, Math.max(10, ...rows.map(r => String(r[ci] ?? "").length)))
+      wch: Math.min(60, Math.max(12, ...rows.map(r => String(r[ci] ?? "").length)))
     }));
   }
+  ws["!rows"] = rows.map((_, ri) => ({ hpx: ri === 0 ? 24 : 20 }));
+  if (rows.length > 1) ws["!autofilter"] = { ref: ws["!ref"] };
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "RHONDA Data");
   XLSX.writeFile(wb, filename);
@@ -135,7 +178,7 @@ async function parseFile(file) {
   }
 
   if (["xlsx", "xls"].includes(ext)) {
-    const XLSX = await import("xlsx");
+    const XLSX = await import("xlsx-js-style");
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array" });
     let out = "";
