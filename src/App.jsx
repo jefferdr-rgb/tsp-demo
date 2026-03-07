@@ -153,6 +153,20 @@ async function downloadXLSX(rows, filename = "rhonda-data.xlsx") {
 }
 
 // ══════════════════════════════════════════════════
+// EMAIL UTILITIES
+// ══════════════════════════════════════════════════
+
+function extractEmailSubject(text) {
+  const match = text.match(/^Subject:\s*(.+)$/im);
+  return match ? match[1].trim() : null;
+}
+
+function extractEmailBody(text) {
+  // Strip the subject line and the blank line that follows it
+  return text.replace(/^Subject:.*(\r?\n)?/im, "").replace(/^\r?\n/, "").trim();
+}
+
+// ══════════════════════════════════════════════════
 // FILE FORMAT SUPPORT
 // ══════════════════════════════════════════════════
 
@@ -269,7 +283,7 @@ export default function Dashboard() {
   const [gated, setGated] = useState(false);
   const [dragOver, setDragOver] = useState(null);
   const [chatDragOver, setChatDragOver] = useState(false);
-  const [copiedIdx, setCopiedIdx] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(null);
   const MAX_MESSAGES = 5;
 
   useEffect(() => {
@@ -287,13 +301,25 @@ export default function Dashboard() {
   const handleCopyForSheets = async (content, idx) => {
     const rows = extractTableRows(content);
     await navigator.clipboard.writeText(rows ? rowsToTSV(rows) : content);
-    setCopiedIdx(idx);
-    setTimeout(() => setCopiedIdx(null), 2000);
+    setCopiedKey(`sheets-${idx}`);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   const handleDownloadXLSX = async (content) => {
     const rows = extractTableRows(content) || content.split("\n").filter(Boolean).map(l => [l]);
     await downloadXLSX(rows);
+  };
+
+  const handleCopyEmail = async (type, content, idx) => {
+    let text = content;
+    if (type === "subject") {
+      text = extractEmailSubject(content) || content;
+    } else if (type === "body") {
+      text = extractEmailBody(content);
+    }
+    await navigator.clipboard.writeText(text);
+    setCopiedKey(`email-${type}-${idx}`);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   const handleFileDrop = async (taskId, files) => {
@@ -555,15 +581,40 @@ export default function Dashboard() {
                           </div>
                         </div>
 
+                        {/* ── Email copy actions (Email tile, assistant messages only) ── */}
+                        {msg.role === "assistant" && activeTask === "email" && (
+                          <div style={{ display: "flex", gap: 8, marginTop: 8, marginLeft: 36, flexWrap: "wrap" }}>
+                            {[
+                              { type: "subject", label: "Copy Subject" },
+                              { type: "body",    label: "Copy Body"    },
+                              { type: "all",     label: "Copy All"     },
+                            ].map(({ type, label }) => {
+                              const key = `email-${type}-${i}`;
+                              const copied = copiedKey === key;
+                              return (
+                                <button key={type}
+                                  onClick={() => handleCopyEmail(type, msg.content, i)}
+                                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, border: `1px solid ${T.border}`, background: copied ? T.greenDim : T.surface, color: copied ? T.green : T.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }}
+                                  onMouseEnter={e => { if (!copied) { e.currentTarget.style.borderColor = T.borderLight; e.currentTarget.style.color = T.text; } }}
+                                  onMouseLeave={e => { if (!copied) { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textMuted; } }}
+                                >
+                                  {copied ? Icons.check : Icons.copy}
+                                  {copied ? "Copied!" : label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
                         {/* ── Sheets export actions (Sheets tile, assistant messages only) ── */}
                         {msg.role === "assistant" && activeTask === "data" && (
                           <div style={{ display: "flex", gap: 8, marginTop: 8, marginLeft: 36 }}>
                             <button
                               onClick={() => handleCopyForSheets(msg.content, i)}
-                              style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, border: `1px solid ${T.border}`, background: copiedIdx === i ? T.greenDim : T.surface, color: copiedIdx === i ? T.green : T.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }}
+                              style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, border: `1px solid ${T.border}`, background: copiedKey === `sheets-${i}` ? T.greenDim : T.surface, color: copiedKey === `sheets-${i}` ? T.green : T.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }}
                             >
-                              {copiedIdx === i ? Icons.check : Icons.copy}
-                              {copiedIdx === i ? "Copied!" : "Copy for Sheets"}
+                              {copiedKey === `sheets-${i}` ? Icons.check : Icons.copy}
+                              {copiedKey === `sheets-${i}` ? "Copied!" : "Copy for Sheets"}
                             </button>
                             <button
                               onClick={() => handleDownloadXLSX(msg.content)}
