@@ -147,6 +147,66 @@ RHONDA works for clients even when they're not logged in. Clients give RHONDA in
 
 ---
 
+## Agent Library
+
+Agents from [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) — pull the linked prompt when working on that feature. No install needed; paste into Claude Code session as context.
+
+### Security & Infrastructure (Phase 1 priority)
+
+| Agent | File | Use When |
+|-------|------|----------|
+| Security Engineer | [engineering/engineering-security-engineer.md](https://github.com/msitarzewski/agency-agents/blob/main/engineering/engineering-security-engineer.md) | Fixing API key exposure, auth hardening, reviewing serverless proxy |
+| DevOps Automator | [engineering/engineering-devops-automator.md](https://github.com/msitarzewski/agency-agents/blob/main/engineering/engineering-devops-automator.md) | Setting up Vercel Cron, KV, CI/CD pipeline for Standing Orders |
+| Backend Architect | [engineering/engineering-backend-architect.md](https://github.com/msitarzewski/agency-agents/blob/main/engineering/engineering-backend-architect.md) | Designing the API proxy layer, auth routes, Standing Orders endpoints |
+
+### Frontend & Design (ongoing)
+
+| Agent | File | Use When |
+|-------|------|----------|
+| Frontend Developer | [engineering/engineering-frontend-developer.md](https://github.com/msitarzewski/agency-agents/blob/main/engineering/engineering-frontend-developer.md) | Building React/Vite UI components, Standing Orders tab |
+| UI Designer | [design/design-ui-designer.md](https://github.com/msitarzewski/agency-agents/blob/main/design/design-ui-designer.md) | Designing dashboard layouts, component visual design |
+| UX Architect | [design/design-ux-architect.md](https://github.com/msitarzewski/agency-agents/blob/main/design/design-ux-architect.md) | Information architecture, user flow planning |
+| Brand Guardian | [design/design-brand-guardian.md](https://github.com/msitarzewski/agency-agents/blob/main/design/design-brand-guardian.md) | Maintaining white-label consistency across client deployments |
+
+### AI & Data (Phase 3 — Standing Orders + Dashboard Intelligence)
+
+| Agent | File | Use When |
+|-------|------|----------|
+| AI Engineer | [engineering/engineering-ai-engineer.md](https://github.com/msitarzewski/agency-agents/blob/main/engineering/engineering-ai-engineer.md) | Claude integration, prompt engineering, Standing Orders AI logic |
+| Analytics Reporter | [support/support-analytics-reporter.md](https://github.com/msitarzewski/agency-agents/blob/main/support/support-analytics-reporter.md) | Building KPI dashboard output, scheduled reporting |
+| Data Analytics Reporter | [specialized/data-analytics-reporter.md](https://github.com/msitarzewski/agency-agents/blob/main/specialized/data-analytics-reporter.md) | Generating structured business intelligence from client data |
+| Data Consolidation Agent | [specialized/data-consolidation-agent.md](https://github.com/msitarzewski/agency-agents/blob/main/specialized/data-consolidation-agent.md) | Aggregating data from multiple client sources (Drive, email, CRM) |
+| Sales Data Extraction | [specialized/sales-data-extraction-agent.md](https://github.com/msitarzewski/agency-agents/blob/main/specialized/sales-data-extraction-agent.md) | Pulling sales metrics from client systems |
+| Report Distribution | [specialized/report-distribution-agent.md](https://github.com/msitarzewski/agency-agents/blob/main/specialized/report-distribution-agent.md) | Delivering Standing Orders output via email/notification |
+| Finance Tracker | [support/support-finance-tracker.md](https://github.com/msitarzewski/agency-agents/blob/main/support/support-finance-tracker.md) | Financial dashboard tiles, revenue tracking |
+| Executive Summary Generator | [support/support-executive-summary-generator.md](https://github.com/msitarzewski/agency-agents/blob/main/support/support-executive-summary-generator.md) | Generating morning briefings and weekly digests for Standing Orders |
+
+### Client-Facing Features (Phase 3b+)
+
+| Agent | File | Use When |
+|-------|------|----------|
+| Support Responder | [support/support-support-responder.md](https://github.com/msitarzewski/agency-agents/blob/main/support/support-support-responder.md) | Customer reply drafting feature, email triage Standing Order |
+| Legal/Compliance Checker | [support/support-legal-compliance-checker.md](https://github.com/msitarzewski/agency-agents/blob/main/support/support-legal-compliance-checker.md) | Compliance review for business clients in regulated industries |
+
+### Orchestration & Quality
+
+| Agent | File | Use When |
+|-------|------|----------|
+| Agents Orchestrator | [specialized/agents-orchestrator.md](https://github.com/msitarzewski/agency-agents/blob/main/specialized/agents-orchestrator.md) | Coordinating multiple agents on complex tasks (e.g. full client onboarding analysis) |
+| Reality Checker | [testing/testing-reality-checker.md](https://github.com/msitarzewski/agency-agents/blob/main/testing/testing-reality-checker.md) | Pre-launch production readiness gate, phase completion checks |
+| API Tester | [testing/testing-api-tester.md](https://github.com/msitarzewski/agency-agents/blob/main/testing/testing-api-tester.md) | Testing `/api/chat` proxy, Standing Orders endpoints |
+| Rapid Prototyper | [engineering/engineering-rapid-prototyper.md](https://github.com/msitarzewski/agency-agents/blob/main/engineering/engineering-rapid-prototyper.md) | Fast POC for new features before full build |
+
+### TSP Growth (Tree Stand Partners business)
+
+| Agent | File | Use When |
+|-------|------|----------|
+| Growth Hacker | [marketing/marketing-growth-hacker.md](https://github.com/msitarzewski/agency-agents/blob/main/marketing/marketing-growth-hacker.md) | Planning RHONDA client acquisition strategy |
+| Product Trend Researcher | [product/product-trend-researcher.md](https://github.com/msitarzewski/agency-agents/blob/main/product/product-trend-researcher.md) | Researching SMB AI tool trends, competitive landscape |
+| Feedback Synthesizer | [product/product-feedback-synthesizer.md](https://github.com/msitarzewski/agency-agents/blob/main/product/product-feedback-synthesizer.md) | Processing client feedback into product decisions |
+
+---
+
 ## Architecture Target State
 
 ```
@@ -191,3 +251,4 @@ Vercel Cron
 - Resend docs: https://resend.com/docs
 - Google OAuth setup: https://console.cloud.google.com
 - Microsoft OAuth setup: https://portal.azure.com (App registrations)
+- Agent library: https://github.com/msitarzewski/agency-agents
