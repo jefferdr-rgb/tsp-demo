@@ -284,6 +284,7 @@ export default function Dashboard() {
   const [dragOver, setDragOver] = useState(null);
   const [chatDragOver, setChatDragOver] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
+  const [fileDoc, setFileDoc] = useState(null); // {name, content} for Drive citations
   const MAX_MESSAGES = 5;
 
   useEffect(() => {
@@ -298,15 +299,19 @@ export default function Dashboard() {
     return "Good evening";
   };
 
-  const handleCopyForSheets = async (content, idx) => {
-    const rows = extractTableRows(content);
+  const handleCopyForSheets = async (content, idx, tableData) => {
+    const rows = tableData
+      ? [tableData.headers, ...tableData.rows]
+      : extractTableRows(content);
     await navigator.clipboard.writeText(rows ? rowsToTSV(rows) : content);
     setCopiedKey(`sheets-${idx}`);
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handleDownloadXLSX = async (content) => {
-    const rows = extractTableRows(content) || content.split("\n").filter(Boolean).map(l => [l]);
+  const handleDownloadXLSX = async (content, tableData) => {
+    const rows = tableData
+      ? [tableData.headers, ...tableData.rows]
+      : (extractTableRows(content) || content.split("\n").filter(Boolean).map(l => [l]));
     await downloadXLSX(rows);
   };
 
@@ -325,10 +330,15 @@ export default function Dashboard() {
   const handleFileDrop = async (taskId, files) => {
     if (!files || !files.length) return;
     const file = files[0];
-    setActiveTask(taskId); setMessages([]); setError(""); setParsing(true);
+    setActiveTask(taskId); setMessages([]); setError(""); setFileDoc(null); setParsing(true);
     try {
       const content = await parseFile(file);
-      setInput(`I'm sharing a file: "${file.name}"\n\n${content}`);
+      if (taskId === "docs") {
+        setFileDoc({ name: file.name, content });
+        setInput(`Summarize "${file.name}" and flag key dates, dollar amounts, and action items.`);
+      } else {
+        setInput(`I'm sharing a file: "${file.name}"\n\n${content}`);
+      }
     } catch {
       setInput(`I'm sharing a file: "${file.name}" — please help me work with this.`);
     } finally { setParsing(false); }
@@ -340,7 +350,12 @@ export default function Dashboard() {
     setParsing(true);
     try {
       const content = await parseFile(file);
-      setInput(prev => (prev ? prev + "\n\n" : "") + `File: "${file.name}"\n\n${content}`);
+      if (activeTask === "docs") {
+        setFileDoc({ name: file.name, content });
+        setInput(prev => (prev ? prev + "\n\n" : "") + `"${file.name}" loaded — what would you like to know?`);
+      } else {
+        setInput(prev => (prev ? prev + "\n\n" : "") + `File: "${file.name}"\n\n${content}`);
+      }
     } catch {
       setInput(prev => (prev ? prev + "\n\n" : "") + `File: "${file.name}"`);
     } finally { setParsing(false); }
@@ -354,23 +369,65 @@ export default function Dashboard() {
     const userMsg = { role: "user", content: input };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages); setInput(""); setTotalMessages(prev => prev + 1);
+
+    // For Drive task: send file as a document block (enables Citations)
+    const docForApi = fileDoc;
+    if (fileDoc) setFileDoc(null);
+    const userContent = (activeTask === "docs" && docForApi)
+      ? [
+          { type: "document", source: { type: "text", data: docForApi.content }, title: docForApi.name, citations: { enabled: true } },
+          { type: "text", text: input },
+        ]
+      : input;
+
+    // For Sheets task: structured output tool guarantees {headers, rows} JSON
+    const sheetsTools = activeTask === "data" ? {
+      tools: [{
+        name: "format_as_table",
+        description: "Format the organized data as a structured table with headers and rows",
+        input_schema: {
+          type: "object",
+          properties: {
+            summary: { type: "string", description: "Brief explanation of what was organized" },
+            headers: { type: "array", items: { type: "string" } },
+            rows: { type: "array", items: { type: "array", items: { type: "string" } } },
+          },
+          required: ["summary", "headers", "rows"],
+        },
+      }],
+      tool_choice: { type: "tool", name: "format_as_table" },
+    } : {};
+
     try {
-      // Only send the most recent messages to avoid re-sending large file content
-      const apiMessages = newMessages.slice(-HISTORY_LIMIT);
+      // Build API messages — use document block for current message if applicable
+      const historyMsgs = messages.slice(-(HISTORY_LIMIT - 1)).map(m => ({ role: m.role, content: m.content }));
+      const apiMessages = [...historyMsgs, { role: "user", content: userContent }];
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001", max_tokens: 700,
           system: SYSTEM_PROMPT + (task?.systemExtra ? "\n\n" + task.systemExtra : ""),
-          messages: apiMessages.map(m => ({ role: m.role, content: m.content })),
+          messages: apiMessages,
+          ...sheetsTools,
         }),
       });
       const data = await res.json();
       if (data.error) { setError(data.error.message); }
       else {
-        const text = (data.content || []).filter(i => i.type === "text").map(i => i.text).join("\n");
-        setMessages([...newMessages, { role: "assistant", content: text || "Done. Anything else?" }]);
+        // Extract text + citations from text blocks
+        const textBlocks = (data.content || []).filter(b => b.type === "text");
+        const text = textBlocks.map(b => b.text).join("\n").trim();
+        const citations = textBlocks.flatMap(b => b.citations || []).filter(c => c.cited_text);
+        // Extract structured table from tool_use block (Sheets task)
+        const toolResult = (data.content || []).find(b => b.type === "tool_use" && b.name === "format_as_table");
+        const tableData = toolResult?.input || null;
+        setMessages([...newMessages, {
+          role: "assistant",
+          content: tableData?.summary || text || "Done. Anything else?",
+          citations: citations.length > 0 ? citations : null,
+          tableData,
+        }]);
         if (totalMessages >= MAX_MESSAGES - 1) setTimeout(() => setGated(true), 2000);
       }
     } catch { setError("Could not connect to RHONDA. Check your connection."); }
@@ -435,7 +492,7 @@ export default function Dashboard() {
             {TASKS.map(t => {
               const isActive = activeTask === t.id;
               return (
-                <div key={t.id} onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); }}
+                <div key={t.id} onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); setFileDoc(null); }}
                   style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, cursor: "pointer", background: isActive ? "rgba(196,155,42,0.15)" : "transparent", color: isActive ? T.gold : "#8a9b7a", transition: "all 0.2s", marginBottom: 1, position: "relative" }}
                   onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
                   onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
@@ -463,7 +520,7 @@ export default function Dashboard() {
             <div style={{ fontSize: 13, color: T.textMuted }}>
               {task ? (
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span onClick={() => { setActiveTask(null); setMessages([]); }} style={{ cursor: "pointer" }}>Dashboard</span>
+                  <span onClick={() => { setActiveTask(null); setMessages([]); setFileDoc(null); }} style={{ cursor: "pointer" }}>Dashboard</span>
                   <span style={{ color: T.textDim }}>→</span>
                   <span style={{ color: T.gold, fontWeight: 600 }}>{task.label}</span>
                 </span>
@@ -498,7 +555,7 @@ export default function Dashboard() {
                     const isDrop = dragOver === t.id;
                     return (
                       <div key={t.id}
-                        onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); }}
+                        onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); setFileDoc(null); }}
                         onDragOver={e => { e.preventDefault(); setDragOver(t.id); }}
                         onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(null); }}
                         onDrop={e => { e.preventDefault(); setDragOver(null); handleFileDrop(t.id, e.dataTransfer.files); }}
@@ -578,6 +635,37 @@ export default function Dashboard() {
                           <div style={{ maxWidth: "75%", padding: "12px 16px", borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px", background: msg.role === "user" ? T.goldDim : T.surfaceHover, border: `1px solid ${msg.role === "user" ? T.goldBorder : T.border}`, color: T.text, fontSize: 13.5, lineHeight: 1.65, whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
                             {msg.role === "assistant" && <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, color: T.gold, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>RHONDA</div>}
                             {msg.content}
+                            {/* Structured table (Sheets task) */}
+                            {msg.tableData && (
+                              <div style={{ marginTop: 12, overflowX: "auto" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                                  <thead>
+                                    <tr>{msg.tableData.headers.map((h, hi) => (
+                                      <th key={hi} style={{ padding: "6px 10px", background: T.beige, color: "#f4f1ea", fontWeight: 700, textAlign: "left", fontSize: 11, borderBottom: `2px solid ${T.borderLight}`, whiteSpace: "nowrap" }}>{h}</th>
+                                    ))}</tr>
+                                  </thead>
+                                  <tbody>{msg.tableData.rows.map((row, ri) => (
+                                    <tr key={ri} style={{ background: ri % 2 === 0 ? T.bgAlt : T.surface }}>
+                                      {row.map((cell, ci) => (
+                                        <td key={ci} style={{ padding: "5px 10px", borderBottom: `1px solid ${T.border}`, color: T.text, fontSize: 12 }}>{cell}</td>
+                                      ))}
+                                    </tr>
+                                  ))}</tbody>
+                                </table>
+                              </div>
+                            )}
+                            {/* Citations (Drive task) */}
+                            {msg.citations && (
+                              <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
+                                <div style={{ fontSize: 9, fontWeight: 700, color: T.gold, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>Sources</div>
+                                {msg.citations.slice(0, 4).map((c, ci) => (
+                                  <div key={ci} style={{ fontSize: 11, color: T.textMuted, padding: "5px 8px", borderLeft: `2px solid ${T.goldBorder}`, marginBottom: 4, background: T.bgAlt, borderRadius: "0 4px 4px 0" }}>
+                                    <span style={{ fontWeight: 600, color: T.textDim, display: "block", marginBottom: 2 }}>{c.document_title}</span>
+                                    {`"${c.cited_text.slice(0, 130)}${c.cited_text.length > 130 ? "…" : ""}"`}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -610,14 +698,14 @@ export default function Dashboard() {
                         {msg.role === "assistant" && activeTask === "data" && (
                           <div style={{ display: "flex", gap: 8, marginTop: 8, marginLeft: 36 }}>
                             <button
-                              onClick={() => handleCopyForSheets(msg.content, i)}
+                              onClick={() => handleCopyForSheets(msg.content, i, msg.tableData)}
                               style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, border: `1px solid ${T.border}`, background: copiedKey === `sheets-${i}` ? T.greenDim : T.surface, color: copiedKey === `sheets-${i}` ? T.green : T.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }}
                             >
                               {copiedKey === `sheets-${i}` ? Icons.check : Icons.copy}
                               {copiedKey === `sheets-${i}` ? "Copied!" : "Copy for Sheets"}
                             </button>
                             <button
-                              onClick={() => handleDownloadXLSX(msg.content)}
+                              onClick={() => handleDownloadXLSX(msg.content, msg.tableData)}
                               style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, border: `1px solid ${T.border}`, background: T.surface, color: T.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit" }}
                               onMouseEnter={e => { e.currentTarget.style.borderColor = T.borderLight; e.currentTarget.style.color = T.text; }}
                               onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textMuted; }}
