@@ -172,8 +172,8 @@ function extractEmailBody(text) {
 
 async function parseFile(file) {
   const ext = file.name.split(".").pop().toLowerCase();
-  // Keep file extracts short — large content gets re-sent on every follow-up message
-  const truncate = (text, max = 3000) =>
+  // No truncation — sending full file content. Cost per query is fractions of a cent; truncation risks wrong answers.
+  const truncate = (text, max = Infinity) =>
     text.length > max
       ? text.slice(0, max) + `\n\n[Truncated — showing first ${max.toLocaleString()} of ${text.length.toLocaleString()} characters]`
       : text;
