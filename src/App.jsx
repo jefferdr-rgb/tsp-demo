@@ -285,6 +285,9 @@ export default function Dashboard() {
   const [chatDragOver, setChatDragOver] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
   const [fileDoc, setFileDoc] = useState(null); // {name, content} for Drive citations
+  const [leoReady, setLeoReady] = useState(null); // {fileName, rawData} — spreadsheet ready to push to LEO
+  const [leoPushing, setLeoPushing] = useState(false);
+  const [leoPushed, setLeoPushed] = useState(false);
   const MAX_MESSAGES = 5;
 
   useEffect(() => {
@@ -330,7 +333,7 @@ export default function Dashboard() {
   const handleFileDrop = async (taskId, files) => {
     if (!files || !files.length) return;
     const file = files[0];
-    setActiveTask(taskId); setMessages([]); setError(""); setFileDoc(null); setParsing(true);
+    setActiveTask(taskId); setMessages([]); setError(""); setFileDoc(null); setLeoReady(null); setLeoPushed(false); setParsing(true);
     try {
       const content = await parseFile(file);
       if (taskId === "docs") {
@@ -338,6 +341,11 @@ export default function Dashboard() {
         setInput(`Summarize "${file.name}" and flag key dates, dollar amounts, and action items.`);
       } else {
         setInput(`I'm sharing a file: "${file.name}"\n\n${content}`);
+        // Flag spreadsheets as ready to push to LEO
+        const ext = file.name.split(".").pop().toLowerCase();
+        if (["xlsx","xls","csv"].includes(ext)) {
+          setLeoReady({ fileName: file.name, rawData: content });
+        }
       }
     } catch {
       setInput(`I'm sharing a file: "${file.name}" — please help me work with this.`);
@@ -359,6 +367,23 @@ export default function Dashboard() {
     } catch {
       setInput(prev => (prev ? prev + "\n\n" : "") + `File: "${file.name}"`);
     } finally { setParsing(false); }
+  };
+
+  const handleLeoPush = async () => {
+    if (!leoReady || leoPushing) return;
+    setLeoPushing(true);
+    try {
+      const res = await fetch("/api/leo-push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientKey: import.meta.env.VITE_LEO_CLIENT_KEY || "sunshine-mills",
+          rawData: leoReady.rawData,
+        }),
+      });
+      if (res.ok) { setLeoPushed(true); setLeoReady(null); }
+    } catch { /* silent */ }
+    finally { setLeoPushing(false); }
   };
 
   const handleSubmit = async () => {
@@ -745,6 +770,18 @@ export default function Dashboard() {
                     <button onClick={handleSubmit} disabled={loading || parsing || !input.trim()}
                       style={{ background: loading || parsing || !input.trim() ? T.surface : `linear-gradient(135deg, ${T.gold}, #B8912E)`, border: "none", borderRadius: 10, width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading || parsing || !input.trim() ? "default" : "pointer", color: loading || parsing || !input.trim() ? T.textDim : T.bg, flexShrink: 0 }}>{Icons.send}</button>
                   </div>
+                  {(leoReady || leoPushed) && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                      {leoPushed ? (
+                        <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>✓ Sent to LEO</span>
+                      ) : (
+                        <button onClick={handleLeoPush} disabled={leoPushing}
+                          style={{ fontSize: 11, fontWeight: 600, color: T.gold, background: T.goldDim, border: `1px solid ${T.goldBorder}`, borderRadius: 7, padding: "5px 12px", cursor: leoPushing ? "default" : "pointer", fontFamily: "'Outfit', sans-serif" }}>
+                          {leoPushing ? "Sending to LEO…" : "⬆ Send to LEO"}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
