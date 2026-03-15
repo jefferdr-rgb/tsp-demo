@@ -55,10 +55,11 @@ Rules:
     });
 
     extractData = await extractRes.json();
-    const text = extractData.content?.[0]?.text?.trim();
+    const raw = extractData.content?.[0]?.text?.trim();
+    const text = raw?.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
     metrics = JSON.parse(text);
   } catch (e) {
-    return res.status(500).json({ error: "Failed to extract metrics from data", detail: e.message, apiResp: extractData ?? null });
+    return res.status(500).json({ error: "Failed to extract metrics from data" });
   }
 
   // Step 2: Push metrics to LEO's update endpoint
