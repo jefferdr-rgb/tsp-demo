@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   }
 
   // Step 1: Claude extracts structured metrics from raw spreadsheet data
-  let metrics;
+  let metrics, extractData;
   try {
     const extractRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -54,11 +54,11 @@ Rules:
       }),
     });
 
-    const extractData = await extractRes.json();
+    extractData = await extractRes.json();
     const text = extractData.content?.[0]?.text?.trim();
     metrics = JSON.parse(text);
   } catch (e) {
-    return res.status(500).json({ error: "Failed to extract metrics from data", detail: e.message, hasKey: !!process.env.ANTHROPIC_API_KEY });
+    return res.status(500).json({ error: "Failed to extract metrics from data", detail: e.message, apiResp: extractData ?? null });
   }
 
   // Step 2: Push metrics to LEO's update endpoint
