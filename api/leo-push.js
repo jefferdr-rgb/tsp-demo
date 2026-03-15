@@ -58,7 +58,7 @@ Rules:
     const text = extractData.content?.[0]?.text?.trim();
     metrics = JSON.parse(text);
   } catch (e) {
-    return res.status(500).json({ error: "Failed to extract metrics from data" });
+    return res.status(500).json({ error: "Failed to extract metrics from data", detail: e.message, hasKey: !!process.env.ANTHROPIC_API_KEY });
   }
 
   // Step 2: Push metrics to LEO's update endpoint
