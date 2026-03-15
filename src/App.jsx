@@ -371,6 +371,7 @@ export default function Dashboard() {
   const handleChatFileDrop = async (files) => {
     if (!files || !files.length) return;
     const file = files[0];
+    if (activeTask === "leo") { handleFileDrop("leo", [file]); return; }
     setParsing(true);
     try {
       const content = await parseFile(file);
@@ -619,8 +620,48 @@ export default function Dashboard() {
                   </div>
                 </div>
 
+                {/* LEO tile — dedicated drop zone, no chat */}
+                {activeTask === "leo" && (
+                  <div
+                    style={{ background: chatDragOver ? T.goldDim : T.surface, border: `${chatDragOver ? 2 : 1}px solid ${chatDragOver ? T.gold : T.border}`, borderRadius: 14, overflow: "hidden", transition: "all 0.2s", cursor: "default" }}
+                    onDragOver={e => { e.preventDefault(); setChatDragOver(true); }}
+                    onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setChatDragOver(false); }}
+                    onDrop={e => { e.preventDefault(); setChatDragOver(false); handleChatFileDrop(e.dataTransfer.files); }}
+                  >
+                    <div style={{ minHeight: 320, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40, textAlign: "center" }}>
+                      {parsing ? (
+                        <div style={{ fontSize: 13, color: T.textMuted, display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ display: "flex", gap: 4 }}>{[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: T.gold, animation: `bounce 1.2s ease ${d*0.15}s infinite` }} />)}</div>
+                          Pushing to LEO…
+                        </div>
+                      ) : messages.length > 0 ? (
+                        <div style={{ fontSize: 14, color: messages[0]?.content?.startsWith("✓") ? T.green : T.red, fontWeight: 600 }}>{messages[0]?.content}</div>
+                      ) : (
+                        <>
+                          <div style={{ width: 56, height: 56, borderRadius: 14, background: chatDragOver ? T.gold : T.goldDim, border: `1px solid ${T.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: chatDragOver ? T.bg : T.gold, marginBottom: 18, transition: "all 0.2s", fontSize: 22 }}>
+                            {chatDragOver ? Icons.upload : Icons.data}
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: T.beige, marginBottom: 8 }}>
+                            {chatDragOver ? "Drop to push to LEO" : "Drop your spreadsheet here"}
+                          </div>
+                          <div style={{ fontSize: 13, color: T.textMuted, maxWidth: 340, lineHeight: 1.6 }}>
+                            Excel or CSV — Claude will extract your KPIs and update your <span style={{ color: T.gold }}>LEO dashboard</span> live.
+                          </div>
+                          <div style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 8 }}>
+                            <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 10, background: `linear-gradient(135deg, ${T.gold}, #B8912E)`, color: T.bg, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: "0.03em" }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                              Push to LEO
+                              <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => { if (e.target.files?.length) handleFileDrop("leo", e.target.files); }} />
+                            </label>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Chat */}
-                <div
+                {activeTask !== "leo" && <div
                   style={{ background: chatDragOver ? T.goldDim : T.surface, border: `${chatDragOver ? 2 : 1}px solid ${chatDragOver ? T.gold : T.border}`, borderRadius: 14, overflow: "hidden", transition: "all 0.2s" }}
                   onDragOver={e => { e.preventDefault(); setChatDragOver(true); }}
                   onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setChatDragOver(false); }}
@@ -769,7 +810,7 @@ export default function Dashboard() {
                     <button onClick={handleSubmit} disabled={loading || parsing || !input.trim()}
                       style={{ background: loading || parsing || !input.trim() ? T.surface : `linear-gradient(135deg, ${T.gold}, #B8912E)`, border: "none", borderRadius: 10, width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading || parsing || !input.trim() ? "default" : "pointer", color: loading || parsing || !input.trim() ? T.textDim : T.bg, flexShrink: 0 }}>{Icons.send}</button>
                   </div>
-                </div>
+                </div>}
               </div>
             )}
           </div>
