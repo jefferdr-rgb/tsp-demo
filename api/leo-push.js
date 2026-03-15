@@ -75,11 +75,11 @@ Rules:
 
     if (!leoRes.ok) {
       const err = await leoRes.json();
-      return res.status(502).json({ error: "LEO update failed", detail: err, hasSecret: !!process.env.LEO_UPDATE_SECRET });
+      return res.status(502).json({ error: "LEO update failed", detail: err });
     }
 
     return res.status(200).json({ ok: true, metrics });
   } catch (e) {
-    return res.status(500).json({ error: "Could not reach LEO", detail: e.message, leoUrl: process.env.LEO_URL || "NOT SET" });
+    return res.status(500).json({ error: "Could not reach LEO" });
   }
 }
