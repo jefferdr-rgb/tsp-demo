@@ -80,6 +80,6 @@ Rules:
 
     return res.status(200).json({ ok: true, metrics });
   } catch (e) {
-    return res.status(500).json({ error: "Could not reach LEO" });
+    return res.status(500).json({ error: "Could not reach LEO", detail: e.message, leoUrl: process.env.LEO_URL || "NOT SET" });
   }
 }
