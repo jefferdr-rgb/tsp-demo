@@ -596,22 +596,44 @@ export default function Dashboard() {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginBottom: 32 }}>
                   {TASKS.map((t, i) => {
                     const isDrop = dragOver === t.id;
+                    const isPremium = t.id === "teach" || t.id === "rhonda";
+                    const isTeachTile = t.id === "teach";
+                    const isRhondaTile = t.id === "rhonda";
+                    const premiumColor = isTeachTile ? T.gold : isRhondaTile ? T.green : null;
+                    const premiumBg = isTeachTile
+                      ? `linear-gradient(135deg, rgba(196,155,42,0.08) 0%, rgba(212,168,67,0.15) 100%)`
+                      : isRhondaTile
+                      ? `linear-gradient(135deg, rgba(74,101,64,0.08) 0%, rgba(74,101,64,0.15) 100%)`
+                      : null;
+                    const premiumBorder = isTeachTile ? T.goldBorder : isRhondaTile ? "rgba(74,101,64,0.3)" : null;
+                    const premiumGlow = isTeachTile
+                      ? "0 4px 20px rgba(196,155,42,0.12)"
+                      : isRhondaTile
+                      ? "0 4px 20px rgba(74,101,64,0.12)"
+                      : "none";
+                    const premiumHoverGlow = isTeachTile
+                      ? "0 12px 36px rgba(196,155,42,0.25)"
+                      : isRhondaTile
+                      ? "0 12px 36px rgba(74,101,64,0.25)"
+                      : "0 8px 24px rgba(0,0,0,0.2)";
                     return (
                       <div key={t.id}
                         onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); setFileDoc(null); }}
                         onDragOver={e => { e.preventDefault(); setDragOver(t.id); }}
                         onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(null); }}
                         onDrop={e => { e.preventDefault(); setDragOver(null); handleFileDrop(t.id, e.dataTransfer.files); }}
-                        style={{ background: isDrop ? T.goldDim : T.surface, border: `${isDrop ? 2 : 1}px solid ${isDrop ? T.gold : T.border}`, borderRadius: 12, padding: isDrop ? "21px 19px" : "22px 20px", cursor: "pointer", transition: "all 0.2s", animation: `fadeIn 0.4s ease ${i * 0.05}s both`, transform: isDrop ? "translateY(-3px) scale(1.01)" : "translateY(0)", boxShadow: isDrop ? `0 12px 32px rgba(196,155,42,0.2)` : "none" }}
-                        onMouseEnter={e => { if (!isDrop) { e.currentTarget.style.borderColor = T.borderLight; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.2)`; } }}
-                        onMouseLeave={e => { if (!isDrop) { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; } }}
+                        style={{ background: isDrop ? T.goldDim : isPremium ? premiumBg : T.surface, border: `${isDrop || isPremium ? 2 : 1}px solid ${isDrop ? T.gold : isPremium ? premiumBorder : T.border}`, borderRadius: isPremium ? 14 : 12, padding: isDrop ? "21px 19px" : isPremium ? "21px 19px" : "22px 20px", cursor: "pointer", transition: "all 0.25s ease", animation: `fadeIn 0.4s ease ${i * 0.05}s both`, transform: isDrop ? "translateY(-3px) scale(1.01)" : "translateY(0)", boxShadow: isDrop ? `0 12px 32px rgba(196,155,42,0.2)` : premiumGlow, position: "relative", overflow: "hidden" }}
+                        onMouseEnter={e => { if (!isDrop) { e.currentTarget.style.borderColor = isPremium ? (premiumColor || T.borderLight) : T.borderLight; e.currentTarget.style.transform = "translateY(-3px) scale(1.01)"; e.currentTarget.style.boxShadow = premiumHoverGlow; } }}
+                        onMouseLeave={e => { if (!isDrop) { e.currentTarget.style.borderColor = isPremium ? premiumBorder : T.border; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = isPremium ? premiumGlow : "none"; } }}
                       >
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: isDrop ? T.goldDim : (t.id === "rhonda" ? T.goldDim : T.surfaceHover), border: `1px solid ${isDrop || t.id === "rhonda" ? T.goldBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: isDrop ? T.gold : t.color, marginBottom: 14, transition: "all 0.2s" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: isDrop ? T.goldDim : isPremium ? (isTeachTile ? "rgba(196,155,42,0.15)" : "rgba(74,101,64,0.15)") : T.surfaceHover, border: `1px solid ${isDrop ? T.goldBorder : isPremium ? premiumBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: isDrop ? T.gold : t.color, marginBottom: 14, transition: "all 0.2s" }}>
                           {isDrop ? Icons.upload : t.icon}
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: T.beige, marginBottom: 5 }}>{t.id === "rhonda" ? <span>Ask <span style={{ color: T.gold }}>RHONDA</span></span> : t.label}</div>
-                        <div style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.5 }}>{t.description}</div>
-                        <div style={{ marginTop: 14, fontSize: 11, fontWeight: 600, color: T.gold }}>{isDrop ? "Drop to upload →" : "Open →"}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: T.beige, marginBottom: 5 }}>
+                          {isTeachTile ? <span>Teach <span style={{ color: T.gold }}>RHONDA</span></span> : isRhondaTile ? <span>Ask <span style={{ color: T.green }}>RHONDA</span></span> : t.label}
+                        </div>
+                        <div style={{ fontSize: 12, color: isPremium ? T.text : T.textMuted, lineHeight: 1.5 }}>{t.description}</div>
+                        <div style={{ marginTop: 14, fontSize: 11, fontWeight: 600, color: isPremium ? premiumColor : T.gold }}>{isDrop ? "Drop to upload →" : "Open →"}</div>
                       </div>
                     );
                   })}
@@ -631,9 +653,9 @@ export default function Dashboard() {
             {activeTask && task && (
               <div style={{ maxWidth: 780, margin: "0 auto", animation: "fadeIn 0.3s ease" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: task.id === "rhonda" ? T.goldDim : T.surfaceHover, border: `1px solid ${task.id === "rhonda" ? T.goldBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.color }}>{task.icon}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: task.id === "teach" ? "rgba(196,155,42,0.15)" : task.id === "rhonda" ? "rgba(74,101,64,0.15)" : T.surfaceHover, border: `1px solid ${task.id === "teach" ? T.goldBorder : task.id === "rhonda" ? "rgba(74,101,64,0.3)" : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.color }}>{task.icon}</div>
                   <div>
-                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.beige }}>{task.id === "rhonda" ? <span>Ask <span style={{ color: T.gold }}>RHONDA</span></span> : task.label}</h2>
+                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.beige }}>{task.id === "teach" ? <span>Teach <span style={{ color: T.gold }}>RHONDA</span></span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.green }}>RHONDA</span></span> : task.label}</h2>
                     <p style={{ margin: "2px 0 0", fontSize: 13, color: T.textMuted }}>{task.description}</p>
                   </div>
                 </div>
@@ -688,9 +710,9 @@ export default function Dashboard() {
                   <div style={{ minHeight: 300, maxHeight: 500, overflow: "auto", padding: 20 }}>
                     {messages.length === 0 && !loading && !parsing && (
                       <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                        <div style={{ width: 52, height: 52, borderRadius: 14, background: T.goldDim, border: `1px solid ${T.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: T.gold, margin: "0 auto 16px" }}>{chatDragOver ? Icons.upload : task.icon}</div>
+                        <div style={{ width: 52, height: 52, borderRadius: 14, background: task.id === "teach" ? "rgba(196,155,42,0.12)" : task.id === "rhonda" ? "rgba(74,101,64,0.12)" : T.goldDim, border: `1px solid ${task.id === "teach" ? T.goldBorder : task.id === "rhonda" ? "rgba(74,101,64,0.3)" : T.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.id === "teach" ? T.gold : task.id === "rhonda" ? T.green : T.gold, margin: "0 auto 16px" }}>{chatDragOver ? Icons.upload : task.icon}</div>
                         <div style={{ fontSize: 14, fontWeight: 500, color: T.textMuted, marginBottom: 6 }}>
-                          {chatDragOver ? <span style={{ color: T.gold, fontWeight: 700 }}>Drop your file here</span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> anything</span> : <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
+                          {chatDragOver ? <span style={{ color: T.gold, fontWeight: 700 }}>Drop your file here</span> : task.id === "teach" ? <span>Teach <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> your job</span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.green, fontWeight: 700 }}>RHONDA</span> anything</span> : <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
                         </div>
                         <div style={{ fontSize: 12, color: T.textDim, maxWidth: 400, margin: "0 auto", lineHeight: 1.6 }}>
                           {chatDragOver ? "Release to load the file into this conversation." : <span>Type your request, or <span style={{ color: T.gold }}>drag a file</span> — Word, Excel, PowerPoint, PDF, CSV supported.{activeTask === "data" && " Results can be exported directly to Google Sheets or Excel."}</span>}
