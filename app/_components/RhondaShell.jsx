@@ -16,6 +16,7 @@ function rgba(hex, a) {
 function buildTheme(config = {}) {
   const accent = config.accent || "#c49b2a";
   const accentSecondary = config.accentSecondary || "#4a6540";
+  const brand = "#c49b2a"; // TSP/RHONDA gold — always fixed
 
   return {
     bg: "#f4f1ea",
@@ -25,6 +26,15 @@ function buildTheme(config = {}) {
     surfaceActive: "#f0ede5",
     border: "#d6d1c4",
     borderLight: "#c4bfb2",
+    // RHONDA brand — never changes
+    brand,
+    brandDim: rgba(brand, 0.1),
+    brandBorder: rgba(brand, 0.3),
+    brandBg08: rgba(brand, 0.08),
+    brandBg15: rgba(brand, 0.15),
+    brandGlow12: `0 4px 20px ${rgba(brand, 0.12)}`,
+    brandGlow25: `0 12px 36px ${rgba(brand, 0.25)}`,
+    // Client accent — changes per template
     gold: accent,
     goldLight: rgba(accent, 0.7),
     goldDim: rgba(accent, 0.1),
@@ -525,16 +535,16 @@ export default function RhondaShell({ config = {} }) {
 
       {/* ══════ DEMO BANNER ══════ */}
       {config.demo?.gatedCTA !== false && (
-        <div style={{ background: "linear-gradient(135deg, #2c3528, #1e2a1c)", padding: "10px 24px", display: "flex", justifyContent: "center", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.gold}33` }}>
+        <div style={{ background: "linear-gradient(135deg, #2c3528, #1e2a1c)", padding: "10px 24px", display: "flex", justifyContent: "center", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.brand}33` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.gold, animation: "pulse 2s infinite" }} />
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.brand, animation: "pulse 2s infinite" }} />
             <span style={{ fontSize: 12, fontWeight: 600, color: "#f4f1ea", letterSpacing: "0.04em" }}>
-              LIVE DEMO — Try <span style={{ color: T.gold, fontWeight: 800 }}>RHONDA</span> right now
+              LIVE DEMO — Try <span style={{ color: T.brand, fontWeight: 800 }}>RHONDA</span> right now
             </span>
           </div>
           <div style={{ fontSize: 11, color: T.textDim }}>|</div>
           <span style={{ fontSize: 11, color: "#8a9b7a" }}>{MAX_MESSAGES - totalMessages} of {MAX_MESSAGES} free messages remaining</span>
-          <a href="https://treestandpartners.com" target="_blank" style={{ fontSize: 10, fontWeight: 700, color: T.gold, textDecoration: "none", padding: "4px 12px", border: `1px solid ${T.gold}44`, borderRadius: 4, letterSpacing: "0.06em" }}>LEARN MORE →</a>
+          <a href="https://treestandpartners.com" target="_blank" style={{ fontSize: 10, fontWeight: 700, color: T.brand, textDecoration: "none", padding: "4px 12px", border: `1px solid ${T.brand}44`, borderRadius: 4, letterSpacing: "0.06em" }}>LEARN MORE →</a>
         </div>
       )}
 
@@ -542,10 +552,10 @@ export default function RhondaShell({ config = {} }) {
       {gated && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(11,26,20,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "#ffffff", borderRadius: 20, padding: "48px 44px", maxWidth: 480, width: "90%", textAlign: "center", boxShadow: "0 24px 64px rgba(0,0,0,0.3)", animation: "fadeIn 0.4s ease" }}>
-            <div style={{ width: 64, height: 64, borderRadius: 16, background: `linear-gradient(135deg, ${T.gold}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: T.goldGlow25 }}>
+            <div style={{ width: 64, height: 64, borderRadius: 16, background: `linear-gradient(135deg, ${T.brand}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: T.brandGlow25 }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
             </div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: "#2c3528", margin: "0 0 8px" }}><span style={{ color: T.gold }}>RHONDA</span> is ready to work full-time</h2>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: "#2c3528", margin: "0 0 8px" }}><span style={{ color: T.brand }}>RHONDA</span> is ready to work full-time</h2>
             <p style={{ fontSize: 14, color: "#6b705c", lineHeight: 1.7, margin: "0 0 28px" }}>You just experienced what your team could have every single day — an AI office manager who drafts emails, organizes data, and handles the tasks you hate. Let's set her up for your business.</p>
             <a href="tel:2567105689" style={{ display: "inline-block", padding: "14px 32px", borderRadius: 8, background: "#2c3528", color: "#f4f1ea", textDecoration: "none", fontWeight: 700, fontSize: 14, letterSpacing: "0.04em", boxShadow: "0 4px 12px rgba(44,53,40,0.2)" }}>Call (256) 710-5689</a>
             <p style={{ fontSize: 13, color: "#8a9b7a", margin: "16px 0 0" }}>or email <span style={{ color: "#2c3528", fontWeight: 600 }}>info@treestandpartners.com</span></p>
@@ -562,12 +572,12 @@ export default function RhondaShell({ config = {} }) {
         <div style={{ width: 240, background: "#2c3528", borderRight: `1px solid #3a4a35`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
           <div style={{ padding: "22px 18px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${T.gold}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px rgba(212,168,67,0.2)` }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${T.brand}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px rgba(212,168,67,0.2)` }}>
                 <svg width="18" height="18" viewBox="0 0 32 32" fill="none" stroke="#0B1A14" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="16" y1="7" x2="16" y2="25"/><polyline points="10,17 16,10 22,17"/><polyline points="12,22 16,17 20,22"/><line x1="11" y1="25" x2="21" y2="25"/></svg>
               </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 800, color: "#f4f1ea", letterSpacing: "0.02em" }}>{companyName}</div>
-                <div style={{ fontSize: 9, fontWeight: 600, color: T.gold, letterSpacing: "0.14em", textTransform: "uppercase" }}>AI Dashboard</div>
+                <div style={{ fontSize: 9, fontWeight: 600, color: T.brand, letterSpacing: "0.14em", textTransform: "uppercase" }}>AI Dashboard</div>
               </div>
             </div>
           </div>
@@ -629,7 +639,7 @@ export default function RhondaShell({ config = {} }) {
               <div style={{ maxWidth: 900, animation: "fadeIn 0.4s ease" }}>
                 <h1 style={{ fontSize: 26, fontWeight: 800, color: T.beige, margin: "0 0 4px", letterSpacing: "-0.01em" }}>{greeting()}</h1>
                 <p style={{ fontSize: 14, color: T.textMuted, margin: "0 0 6px", fontWeight: 300 }}>
-                  <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> is ready. What do you need help with?{" "}
+                  <span style={{ color: T.brand, fontWeight: 700 }}>RHONDA</span> is ready. What do you need help with?{" "}
                   <span style={{ color: T.textDim, fontSize: 12 }}>Drag a file onto any tile to get started.</span>
                 </p>
                 <p style={{ fontSize: 11, color: T.textDim, margin: "0 0 24px" }}>
@@ -641,20 +651,20 @@ export default function RhondaShell({ config = {} }) {
                     const isPremium = t.id === "teach" || t.id === "rhonda";
                     const isTeachTile = t.id === "teach";
                     const isRhondaTile = t.id === "rhonda";
-                    const premiumColor = isTeachTile ? T.gold : isRhondaTile ? T.green : null;
+                    const premiumColor = isTeachTile ? T.brand : isRhondaTile ? T.green : null;
                     const premiumBg = isTeachTile
-                      ? `linear-gradient(135deg, ${T.goldBg08} 0%, ${T.goldBg15} 100%)`
+                      ? `linear-gradient(135deg, ${T.brandBg08} 0%, ${T.brandBg15} 100%)`
                       : isRhondaTile
                       ? `linear-gradient(135deg, ${T.greenBg08} 0%, ${T.greenBg15} 100%)`
                       : null;
-                    const premiumBorder = isTeachTile ? T.goldBorder : isRhondaTile ? T.greenBorder : null;
+                    const premiumBorder = isTeachTile ? T.brandBorder : isRhondaTile ? T.greenBorder : null;
                     const premiumGlow = isTeachTile
-                      ? T.goldGlow12
+                      ? T.brandGlow12
                       : isRhondaTile
                       ? T.greenGlow12
                       : "none";
                     const premiumHoverGlow = isTeachTile
-                      ? T.goldGlow25
+                      ? T.brandGlow25
                       : isRhondaTile
                       ? T.greenGlow25
                       : "0 8px 24px rgba(0,0,0,0.2)";
@@ -668,11 +678,11 @@ export default function RhondaShell({ config = {} }) {
                         onMouseEnter={e => { if (!isDrop) { e.currentTarget.style.borderColor = isPremium ? (premiumColor || T.borderLight) : T.borderLight; e.currentTarget.style.transform = "translateY(-3px) scale(1.01)"; e.currentTarget.style.boxShadow = premiumHoverGlow; } }}
                         onMouseLeave={e => { if (!isDrop) { e.currentTarget.style.borderColor = isPremium ? premiumBorder : T.border; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = isPremium ? premiumGlow : "none"; } }}
                       >
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: isDrop ? T.goldDim : isPremium ? (isTeachTile ? T.goldBg15 : T.greenBg15) : T.surfaceHover, border: `1px solid ${isDrop ? T.goldBorder : isPremium ? premiumBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: isDrop ? T.gold : t.color, marginBottom: 14, transition: "all 0.2s" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: isDrop ? T.brandDim : isPremium ? (isTeachTile ? T.brandBg15 : T.greenBg15) : T.surfaceHover, border: `1px solid ${isDrop ? T.brandBorder : isPremium ? premiumBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: isDrop ? T.brand : t.color, marginBottom: 14, transition: "all 0.2s" }}>
                           {isDrop ? Icons.upload : t.icon}
                         </div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: T.beige, marginBottom: 5 }}>
-                          {isTeachTile ? <span>Teach <span style={{ color: T.gold }}>RHONDA</span></span> : isRhondaTile ? <span>Ask <span style={{ color: T.green }}>RHONDA</span></span> : t.label}
+                          {isTeachTile ? <span>Teach <span style={{ color: T.brand }}>RHONDA</span></span> : isRhondaTile ? <span>Ask <span style={{ color: T.green }}>RHONDA</span></span> : t.label}
                         </div>
                         <div style={{ fontSize: 12, color: isPremium ? T.text : T.textMuted, lineHeight: 1.5 }}>{t.description}</div>
                         <div style={{ marginTop: 14, fontSize: 11, fontWeight: 600, color: isPremium ? premiumColor : T.gold }}>{isDrop ? "Drop to upload →" : "Open →"}</div>
@@ -695,9 +705,9 @@ export default function RhondaShell({ config = {} }) {
             {activeTask && task && (
               <div style={{ maxWidth: 780, margin: "0 auto", animation: "fadeIn 0.3s ease" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: task.id === "teach" ? T.goldBg15 : task.id === "rhonda" ? T.greenBg15 : T.surfaceHover, border: `1px solid ${task.id === "teach" ? T.goldBorder : task.id === "rhonda" ? T.greenBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.color }}>{task.icon}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: task.id === "teach" ? T.brandBg15 : task.id === "rhonda" ? T.greenBg15 : T.surfaceHover, border: `1px solid ${task.id === "teach" ? T.brandBorder : task.id === "rhonda" ? T.greenBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.color }}>{task.icon}</div>
                   <div>
-                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.beige }}>{task.id === "teach" ? <span>Teach <span style={{ color: T.gold }}>RHONDA</span></span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.green }}>RHONDA</span></span> : task.label}</h2>
+                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.beige }}>{task.id === "teach" ? <span>Teach <span style={{ color: T.brand }}>RHONDA</span></span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.green }}>RHONDA</span></span> : task.label}</h2>
                     <p style={{ margin: "2px 0 0", fontSize: 13, color: T.textMuted }}>{task.description}</p>
                   </div>
                 </div>
@@ -713,7 +723,7 @@ export default function RhondaShell({ config = {} }) {
                     <div style={{ minHeight: 320, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40, textAlign: "center" }}>
                       {parsing ? (
                         <div style={{ fontSize: 13, color: T.textMuted, display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ display: "flex", gap: 4 }}>{[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: T.gold, animation: `bounce 1.2s ease ${d*0.15}s infinite` }} />)}</div>
+                          <div style={{ display: "flex", gap: 4 }}>{[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: T.brand, animation: `bounce 1.2s ease ${d*0.15}s infinite` }} />)}</div>
                           Pushing to LEO…
                         </div>
                       ) : messages.length > 0 ? (
@@ -730,7 +740,7 @@ export default function RhondaShell({ config = {} }) {
                             Excel or CSV — Claude will extract your KPIs and update your <span style={{ color: T.gold }}>LEO dashboard</span> live.
                           </div>
                           <div style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 8 }}>
-                            <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 10, background: `linear-gradient(135deg, ${T.gold}, #B8912E)`, color: T.bg, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: "0.03em" }}>
+                            <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 10, background: `linear-gradient(135deg, ${T.brand}, #B8912E)`, color: T.bg, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: "0.03em" }}>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                               Push to LEO
                               <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => { if (e.target.files?.length) handleFileDrop("leo", e.target.files); }} />
@@ -752,9 +762,9 @@ export default function RhondaShell({ config = {} }) {
                   <div style={{ minHeight: 300, maxHeight: 500, overflow: "auto", padding: 20 }}>
                     {messages.length === 0 && !loading && !parsing && (
                       <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                        <div style={{ width: 52, height: 52, borderRadius: 14, background: task.id === "teach" ? T.goldBg15 : task.id === "rhonda" ? T.greenBg15 : T.goldDim, border: `1px solid ${task.id === "teach" ? T.goldBorder : task.id === "rhonda" ? T.greenBorder : T.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.id === "teach" ? T.gold : task.id === "rhonda" ? T.green : T.gold, margin: "0 auto 16px" }}>{chatDragOver ? Icons.upload : task.icon}</div>
+                        <div style={{ width: 52, height: 52, borderRadius: 14, background: task.id === "teach" ? T.brandBg15 : task.id === "rhonda" ? T.greenBg15 : T.brandDim, border: `1px solid ${task.id === "teach" ? T.brandBorder : task.id === "rhonda" ? T.greenBorder : T.brandBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.id === "teach" ? T.brand : task.id === "rhonda" ? T.green : T.brand, margin: "0 auto 16px" }}>{chatDragOver ? Icons.upload : task.icon}</div>
                         <div style={{ fontSize: 14, fontWeight: 500, color: T.textMuted, marginBottom: 6 }}>
-                          {chatDragOver ? <span style={{ color: T.gold, fontWeight: 700 }}>Drop your file here</span> : task.id === "teach" ? <span>Teach <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> your job</span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.green, fontWeight: 700 }}>RHONDA</span> anything</span> : <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
+                          {chatDragOver ? <span style={{ color: T.brand, fontWeight: 700 }}>Drop your file here</span> : task.id === "teach" ? <span>Teach <span style={{ color: T.brand, fontWeight: 700 }}>RHONDA</span> your job</span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.green, fontWeight: 700 }}>RHONDA</span> anything</span> : <span>Ask <span style={{ color: T.brand, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
                         </div>
                         <div style={{ fontSize: 12, color: T.textDim, maxWidth: 400, margin: "0 auto", lineHeight: 1.6 }}>
                           {chatDragOver ? "Release to load the file into this conversation." : <span>Type your request, or <span style={{ color: T.gold }}>drag a file</span> — Word, Excel, PowerPoint, PDF, CSV supported.{activeTask === "data" && " Results can be exported directly to Google Sheets or Excel."}</span>}
@@ -765,7 +775,7 @@ export default function RhondaShell({ config = {} }) {
                     {parsing && (
                       <div style={{ textAlign: "center", padding: "60px 20px" }}>
                         <div style={{ fontSize: 13, color: T.textMuted, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                          <div style={{ display: "flex", gap: 4 }}>{[0, 1, 2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: T.gold, animation: `bounce 1.2s ease ${d * 0.15}s infinite` }} />)}</div>
+                          <div style={{ display: "flex", gap: 4 }}>{[0, 1, 2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: T.brand, animation: `bounce 1.2s ease ${d * 0.15}s infinite` }} />)}</div>
                           Reading file...
                         </div>
                       </div>
@@ -775,12 +785,12 @@ export default function RhondaShell({ config = {} }) {
                       <div key={i} style={{ marginBottom: 14, animation: "fadeIn 0.3s ease" }}>
                         <div style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
                           {msg.role === "assistant" && (
-                            <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg, ${T.gold}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", marginRight: 8, flexShrink: 0, marginTop: 2 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg, ${T.brand}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", marginRight: 8, flexShrink: 0, marginTop: 2 }}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B1A14" strokeWidth="2.5"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
                             </div>
                           )}
                           <div style={{ maxWidth: "75%", padding: "12px 16px", borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px", background: msg.role === "user" ? T.goldDim : T.surfaceHover, border: `1px solid ${msg.role === "user" ? T.goldBorder : T.border}`, color: T.text, fontSize: 13.5, lineHeight: 1.65, whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
-                            {msg.role === "assistant" && <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, color: T.gold, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>RHONDA</div>}
+                            {msg.role === "assistant" && <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, color: T.brand, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>RHONDA</div>}
                             {msg.content}
                             {/* Structured table (Sheets task) */}
                             {msg.tableData && (
@@ -804,7 +814,7 @@ export default function RhondaShell({ config = {} }) {
                             {/* Citations (Drive task) */}
                             {msg.citations && (
                               <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
-                                <div style={{ fontSize: 9, fontWeight: 700, color: T.gold, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>Sources</div>
+                                <div style={{ fontSize: 9, fontWeight: 700, color: T.brand, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>Sources</div>
                                 {msg.citations.slice(0, 4).map((c, ci) => (
                                   <div key={ci} style={{ fontSize: 11, color: T.textMuted, padding: "5px 8px", borderLeft: `2px solid ${T.goldBorder}`, marginBottom: 4, background: T.bgAlt, borderRadius: "0 4px 4px 0" }}>
                                     <span style={{ fontWeight: 600, color: T.textDim, display: "block", marginBottom: 2 }}>{c.document_title}</span>
@@ -867,11 +877,11 @@ export default function RhondaShell({ config = {} }) {
 
                     {loading && (
                       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0" }}>
-                        <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg, ${T.gold}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg, ${T.brand}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B1A14" strokeWidth="2.5"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
                         </div>
                         <div style={{ padding: "10px 16px", borderRadius: 14, background: T.surfaceHover, display: "flex", gap: 5 }}>
-                          {[0, 1, 2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: T.gold, animation: `bounce 1.2s ease ${d * 0.15}s infinite` }} />)}
+                          {[0, 1, 2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: T.brand, animation: `bounce 1.2s ease ${d * 0.15}s infinite` }} />)}
                         </div>
                       </div>
                     )}
