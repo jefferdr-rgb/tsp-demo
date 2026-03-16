@@ -13,12 +13,23 @@ function rgba(hex, a) {
   return `rgba(${r},${g},${b},${a})`;
 }
 
+function darken(hex, amount = 0.15) {
+  const { r, g, b } = hexToRgb(hex);
+  const f = 1 - amount;
+  return `#${Math.round(r*f).toString(16).padStart(2,"0")}${Math.round(g*f).toString(16).padStart(2,"0")}${Math.round(b*f).toString(16).padStart(2,"0")}`;
+}
+
 function buildTheme(config = {}) {
   const accent = config.accent || "#c49b2a";
   const accentSecondary = config.accentSecondary || "#4a6540";
   const brand = "#c49b2a"; // TSP/RHONDA gold — always fixed
+  const chrome = config.chrome || "#2c3528"; // sidebar/banner bg
+  const chromeBorder = darken(chrome, -0.15);  // slightly lighter for borders
 
   return {
+    chrome,
+    chromeBorder,
+    chromeDark: darken(chrome, 0.2),
     bg: "#f4f1ea",
     bgAlt: "#edeae2",
     surface: "#ffffff",
@@ -535,7 +546,7 @@ export default function RhondaShell({ config = {} }) {
 
       {/* ══════ DEMO BANNER ══════ */}
       {config.demo?.gatedCTA !== false && (
-        <div style={{ background: "linear-gradient(135deg, #2c3528, #1e2a1c)", padding: "10px 24px", display: "flex", justifyContent: "center", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.brand}33` }}>
+        <div style={{ background: `linear-gradient(135deg, ${T.chrome}, ${T.chromeDark})`, padding: "10px 24px", display: "flex", justifyContent: "center", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.brand}33` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.brand, animation: "pulse 2s infinite" }} />
             <span style={{ fontSize: 12, fontWeight: 600, color: "#f4f1ea", letterSpacing: "0.04em" }}>
@@ -569,7 +580,7 @@ export default function RhondaShell({ config = {} }) {
       <div style={{ display: "flex", minHeight: "100vh" }}>
 
         {/* ══════ SIDEBAR ══════ */}
-        <div style={{ width: 240, background: "#2c3528", borderRight: `1px solid #3a4a35`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ width: 240, background: T.chrome, borderRight: `1px solid ${T.chromeBorder}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
           <div style={{ padding: "22px 18px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${T.brand}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px rgba(212,168,67,0.2)` }}>
@@ -581,7 +592,7 @@ export default function RhondaShell({ config = {} }) {
               </div>
             </div>
           </div>
-          <div style={{ height: 1, background: "#3a4a35", margin: "0 14px" }} />
+          <div style={{ height: 1, background: T.chromeBorder, margin: "0 14px" }} />
           <div style={{ padding: "12px 8px", flex: 1 }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: "#6b7e6a", letterSpacing: "0.15em", textTransform: "uppercase", padding: "6px 10px", marginBottom: 4 }}>Tools</div>
             {TASKS.map(t => {
@@ -599,7 +610,7 @@ export default function RhondaShell({ config = {} }) {
               );
             })}
           </div>
-          <div style={{ padding: "14px 18px", borderTop: `1px solid #3a4a35` }}>
+          <div style={{ padding: "14px 18px", borderTop: `1px solid ${T.chromeBorder}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ECDC4", boxShadow: `0 0 8px #4ECDC4`, animation: "pulse 2s infinite" }} />
               <span style={{ fontSize: 11, color: "#6b7e6a", fontWeight: 500 }}>Powered by <span style={{ color: "#c49b2a", fontWeight: 700 }}>RHONDA</span> AI</span>
