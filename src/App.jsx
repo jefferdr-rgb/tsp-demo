@@ -32,6 +32,20 @@ const T = {
 // ══════════════════════════════════════════════════
 const SYSTEM_PROMPT = `You are Rhonda, the AI office manager for this business. You help with emails, data organization, document summaries, customer replies, scheduling, and any other business task. Be warm, professional, and concise.`;
 
+const TEACH_SYSTEM_PROMPT = `You are RHONDA in learning mode. A staff member is teaching you their job. Your ONLY goal is to understand what they do, how they do it, what they need to know, and what "done right" looks like.
+
+RULES:
+- Be a great interviewer. Ask one follow-up question at a time — never a list.
+- After they describe a task, ask: "What knowledge or skills does that require?"
+- After they explain the skill, ask: "How do you know when it's done right? What's the standard?"
+- If they mention something going wrong, ask: "What usually causes that? What happens next?"
+- Keep it conversational. You're a curious coworker learning the ropes, not filling out a form.
+- Acknowledge what they say before asking the next question: "Got it — so the PO has to match the invoice before you can approve it."
+- Never try to help them do the task. You're learning, not assisting.
+- Never summarize everything back in a long list. Just keep the conversation flowing naturally.
+- After 5-6 exchanges, gently check: "Is there another part of your role you want to walk me through, or should we pick up here next time?"
+- Be warm. They're doing you a favor by teaching you.`;
+
 // ══════════════════════════════════════════════════
 // ICONS
 // ══════════════════════════════════════════════════
@@ -49,6 +63,7 @@ const Icons = {
   copy: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
   download: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
   check: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  teach: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
 };
 
 // ══════════════════════════════════════════════════
@@ -262,6 +277,7 @@ const TASKS = [
   { id: "docs", label: "Drive", icon: Icons.docs, color: "#6495ED", description: "Find and summarize documents", placeholder: "What document do you need?\n\nExample: \"Summarize this vendor contract and flag anything unusual\"", systemExtra: "Summarize in plain English. Flag key dates, dollar amounts, action items, and anything unusual." },
   { id: "calendar", label: "Calendar", icon: Icons.calendar, color: "#E8C96A", description: "Manage events and scheduling", placeholder: "What do you need with the calendar?\n\nExample: \"Find an open slot next Tuesday for a job estimate\"", systemExtra: "Help manage the calendar. Confirm details before creating events." },
   { id: "customers", label: "Customers", icon: Icons.customers, color: T.beigeMuted, description: "Handle customer questions and responses", placeholder: "Paste the customer message or describe the situation...\n\nExample: \"A customer says our quote is too high — help me respond\"", systemExtra: "Draft professional, solution-oriented customer responses. Be confident but never defensive." },
+  { id: "teach", label: "Teach RHONDA", icon: Icons.teach, color: T.green, description: "Teach me your job — I'll learn the tasks, skills, and standards", placeholder: "Hit your mic key and tell me what you're working on.\n\nOr type: \"Let me walk you through how I process orders\" or \"I want to teach you about my daily routine\"", systemExtra: "", goldLabel: true, useTeachPrompt: true },
   { id: "rhonda", label: "Ask RHONDA", icon: Icons.ai, color: T.gold, description: "General questions — anything you need", placeholder: "Ask RHONDA anything...\n\nExample: \"Help me write a job posting\" or \"What should I include in a bid proposal?\"", systemExtra: "Be helpful, direct, and practical.", goldLabel: true },
   { id: "leo", label: "Send to LEO", icon: Icons.data, color: T.gold, description: "Push spreadsheet data to your LEO dashboard", placeholder: "", systemExtra: "" },
 ];
@@ -427,13 +443,15 @@ export default function Dashboard() {
       // Build API messages — use document block for current message if applicable
       const historyMsgs = messages.slice(-(HISTORY_LIMIT - 1)).map(m => ({ role: m.role, content: m.content }));
       const apiMessages = [...historyMsgs, { role: "user", content: userContent }];
+      const isTeach = activeTask === "teach";
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6", max_tokens: 700,
-          system: SYSTEM_PROMPT + (task?.systemExtra ? "\n\n" + task.systemExtra : ""),
-          messages: apiMessages,
+          model: isTeach ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001",
+          max_tokens: isTeach ? 400 : 700,
+          system: isTeach ? TEACH_SYSTEM_PROMPT : SYSTEM_PROMPT + (task?.systemExtra ? "\n\n" + task.systemExtra : ""),
+          messages: isTeach ? [...messages.slice(-8).map(m => ({ role: m.role, content: m.content })), { role: "user", content: input }] : apiMessages,
           ...sheetsTools,
         }),
       });
