@@ -431,7 +431,7 @@ export default function Dashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001", max_tokens: 700,
+          model: "claude-sonnet-4-6", max_tokens: 700,
           system: SYSTEM_PROMPT + (task?.systemExtra ? "\n\n" + task.systemExtra : ""),
           messages: apiMessages,
           ...sheetsTools,
