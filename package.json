@@ -1,22 +1,20 @@
 {
-  "name": "tsp-demo",
-  "version": "1.0.0",
+  "name": "tsp-rhonda",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@supabase/supabase-js": "^2.49.0",
     "mammoth": "^1.8.0",
     "xlsx-js-style": "^1.2.0",
     "jszip": "^3.10.1",
     "pdfjs-dist": "^4.4.168"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.0.0",
-    "vite": "^5.0.0"
   }
 }
