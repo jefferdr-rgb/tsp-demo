@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 // ══════════════════════════════════════════════════
 // THEME BUILDER — pure function, no mutation
 // ══════════════════════════════════════════════════
+function hexToRgb(hex) {
+  const h = hex.replace("#", "");
+  return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
+}
+function rgba(hex, a) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
 function buildTheme(config = {}) {
   const accent = config.accent || "#c49b2a";
   const accentSecondary = config.accentSecondary || "#4a6540";
@@ -17,11 +26,20 @@ function buildTheme(config = {}) {
     border: "#d6d1c4",
     borderLight: "#c4bfb2",
     gold: accent,
-    goldLight: "#d4a843",
-    goldDim: `${accent}1a`,
-    goldBorder: `${accent}4d`,
+    goldLight: rgba(accent, 0.7),
+    goldDim: rgba(accent, 0.1),
+    goldBorder: rgba(accent, 0.3),
+    goldBg08: rgba(accent, 0.08),
+    goldBg15: rgba(accent, 0.15),
+    goldGlow12: `0 4px 20px ${rgba(accent, 0.12)}`,
+    goldGlow25: `0 12px 36px ${rgba(accent, 0.25)}`,
     green: accentSecondary,
-    greenDim: `${accentSecondary}1a`,
+    greenDim: rgba(accentSecondary, 0.1),
+    greenBorder: rgba(accentSecondary, 0.3),
+    greenBg08: rgba(accentSecondary, 0.08),
+    greenBg15: rgba(accentSecondary, 0.15),
+    greenGlow12: `0 4px 20px ${rgba(accentSecondary, 0.12)}`,
+    greenGlow25: `0 12px 36px ${rgba(accentSecondary, 0.25)}`,
     red: "#C53030",
     redDim: "rgba(197, 48, 48, 0.08)",
     beige: "#2c3528",
@@ -524,7 +542,7 @@ export default function RhondaShell({ config = {} }) {
       {gated && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(11,26,20,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "#ffffff", borderRadius: 20, padding: "48px 44px", maxWidth: 480, width: "90%", textAlign: "center", boxShadow: "0 24px 64px rgba(0,0,0,0.3)", animation: "fadeIn 0.4s ease" }}>
-            <div style={{ width: 64, height: 64, borderRadius: 16, background: `linear-gradient(135deg, ${T.gold}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: `0 8px 24px rgba(196,155,42,0.3)` }}>
+            <div style={{ width: 64, height: 64, borderRadius: 16, background: `linear-gradient(135deg, ${T.gold}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: T.goldGlow25 }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
             </div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: "#2c3528", margin: "0 0 8px" }}><span style={{ color: T.gold }}>RHONDA</span> is ready to work full-time</h2>
@@ -560,7 +578,7 @@ export default function RhondaShell({ config = {} }) {
               const isActive = activeTask === t.id;
               return (
                 <div key={t.id} onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); setFileDoc(null); }}
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, cursor: "pointer", background: isActive ? "rgba(196,155,42,0.15)" : "transparent", color: isActive ? T.gold : "#8a9b7a", transition: "all 0.2s", marginBottom: 1, position: "relative" }}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, cursor: "pointer", background: isActive ? T.goldBg15 : "transparent", color: isActive ? T.gold : "#8a9b7a", transition: "all 0.2s", marginBottom: 1, position: "relative" }}
                   onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
                   onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
                 >
@@ -625,20 +643,20 @@ export default function RhondaShell({ config = {} }) {
                     const isRhondaTile = t.id === "rhonda";
                     const premiumColor = isTeachTile ? T.gold : isRhondaTile ? T.green : null;
                     const premiumBg = isTeachTile
-                      ? `linear-gradient(135deg, rgba(196,155,42,0.08) 0%, rgba(212,168,67,0.15) 100%)`
+                      ? `linear-gradient(135deg, ${T.goldBg08} 0%, ${T.goldBg15} 100%)`
                       : isRhondaTile
-                      ? `linear-gradient(135deg, rgba(74,101,64,0.08) 0%, rgba(74,101,64,0.15) 100%)`
+                      ? `linear-gradient(135deg, ${T.greenBg08} 0%, ${T.greenBg15} 100%)`
                       : null;
-                    const premiumBorder = isTeachTile ? T.goldBorder : isRhondaTile ? "rgba(74,101,64,0.3)" : null;
+                    const premiumBorder = isTeachTile ? T.goldBorder : isRhondaTile ? T.greenBorder : null;
                     const premiumGlow = isTeachTile
-                      ? "0 4px 20px rgba(196,155,42,0.12)"
+                      ? T.goldGlow12
                       : isRhondaTile
-                      ? "0 4px 20px rgba(74,101,64,0.12)"
+                      ? T.greenGlow12
                       : "none";
                     const premiumHoverGlow = isTeachTile
-                      ? "0 12px 36px rgba(196,155,42,0.25)"
+                      ? T.goldGlow25
                       : isRhondaTile
-                      ? "0 12px 36px rgba(74,101,64,0.25)"
+                      ? T.greenGlow25
                       : "0 8px 24px rgba(0,0,0,0.2)";
                     return (
                       <div key={t.id}
@@ -650,7 +668,7 @@ export default function RhondaShell({ config = {} }) {
                         onMouseEnter={e => { if (!isDrop) { e.currentTarget.style.borderColor = isPremium ? (premiumColor || T.borderLight) : T.borderLight; e.currentTarget.style.transform = "translateY(-3px) scale(1.01)"; e.currentTarget.style.boxShadow = premiumHoverGlow; } }}
                         onMouseLeave={e => { if (!isDrop) { e.currentTarget.style.borderColor = isPremium ? premiumBorder : T.border; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = isPremium ? premiumGlow : "none"; } }}
                       >
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: isDrop ? T.goldDim : isPremium ? (isTeachTile ? "rgba(196,155,42,0.15)" : "rgba(74,101,64,0.15)") : T.surfaceHover, border: `1px solid ${isDrop ? T.goldBorder : isPremium ? premiumBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: isDrop ? T.gold : t.color, marginBottom: 14, transition: "all 0.2s" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: isDrop ? T.goldDim : isPremium ? (isTeachTile ? T.goldBg15 : T.greenBg15) : T.surfaceHover, border: `1px solid ${isDrop ? T.goldBorder : isPremium ? premiumBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: isDrop ? T.gold : t.color, marginBottom: 14, transition: "all 0.2s" }}>
                           {isDrop ? Icons.upload : t.icon}
                         </div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: T.beige, marginBottom: 5 }}>
@@ -677,7 +695,7 @@ export default function RhondaShell({ config = {} }) {
             {activeTask && task && (
               <div style={{ maxWidth: 780, margin: "0 auto", animation: "fadeIn 0.3s ease" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: task.id === "teach" ? "rgba(196,155,42,0.15)" : task.id === "rhonda" ? "rgba(74,101,64,0.15)" : T.surfaceHover, border: `1px solid ${task.id === "teach" ? T.goldBorder : task.id === "rhonda" ? "rgba(74,101,64,0.3)" : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.color }}>{task.icon}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: task.id === "teach" ? T.goldBg15 : task.id === "rhonda" ? T.greenBg15 : T.surfaceHover, border: `1px solid ${task.id === "teach" ? T.goldBorder : task.id === "rhonda" ? T.greenBorder : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.color }}>{task.icon}</div>
                   <div>
                     <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.beige }}>{task.id === "teach" ? <span>Teach <span style={{ color: T.gold }}>RHONDA</span></span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.green }}>RHONDA</span></span> : task.label}</h2>
                     <p style={{ margin: "2px 0 0", fontSize: 13, color: T.textMuted }}>{task.description}</p>
@@ -734,7 +752,7 @@ export default function RhondaShell({ config = {} }) {
                   <div style={{ minHeight: 300, maxHeight: 500, overflow: "auto", padding: 20 }}>
                     {messages.length === 0 && !loading && !parsing && (
                       <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                        <div style={{ width: 52, height: 52, borderRadius: 14, background: task.id === "teach" ? "rgba(196,155,42,0.12)" : task.id === "rhonda" ? "rgba(74,101,64,0.12)" : T.goldDim, border: `1px solid ${task.id === "teach" ? T.goldBorder : task.id === "rhonda" ? "rgba(74,101,64,0.3)" : T.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.id === "teach" ? T.gold : task.id === "rhonda" ? T.green : T.gold, margin: "0 auto 16px" }}>{chatDragOver ? Icons.upload : task.icon}</div>
+                        <div style={{ width: 52, height: 52, borderRadius: 14, background: task.id === "teach" ? T.goldBg15 : task.id === "rhonda" ? T.greenBg15 : T.goldDim, border: `1px solid ${task.id === "teach" ? T.goldBorder : task.id === "rhonda" ? T.greenBorder : T.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.id === "teach" ? T.gold : task.id === "rhonda" ? T.green : T.gold, margin: "0 auto 16px" }}>{chatDragOver ? Icons.upload : task.icon}</div>
                         <div style={{ fontSize: 14, fontWeight: 500, color: T.textMuted, marginBottom: 6 }}>
                           {chatDragOver ? <span style={{ color: T.gold, fontWeight: 700 }}>Drop your file here</span> : task.id === "teach" ? <span>Teach <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> your job</span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.green, fontWeight: 700 }}>RHONDA</span> anything</span> : <span>Ask <span style={{ color: T.gold, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
                         </div>
