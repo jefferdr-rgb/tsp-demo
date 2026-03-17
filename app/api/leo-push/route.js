@@ -13,11 +13,12 @@ export async function POST(request) {
         "Content-Type": "application/json",
         "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
+        "anthropic-beta": "prompt-caching-2024-07-31",
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 600,
-        system: `You extract business KPI metrics from spreadsheet data and return a JSON object.
+        system: [{ type: "text", cache_control: { type: "ephemeral" }, text: `You extract business KPI metrics from spreadsheet data and return a JSON object.
 
 Return ONLY valid JSON in this exact shape — no explanation, no markdown:
 {
@@ -41,7 +42,7 @@ Rules:
 - For "up": true if change is positive, false if negative.
 - For "revenueProgress": the percentage of revenue target achieved (0-100).
 - If a field can't be determined, use a sensible default.
-- Return only the JSON object, nothing else.`,
+- Return only the JSON object, nothing else.` }],
         messages: [
           { role: "user", content: `Extract metrics from this data:\n\n${rawData.slice(0, 4000)}` },
         ],
