@@ -370,6 +370,9 @@ export default function RhondaShell({ config = {} }) {
   const [chatDragOver, setChatDragOver] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
   const [fileDoc, setFileDoc] = useState(null);
+  const [sopOutput, setSopOutput] = useState("");
+  const [sopGenerating, setSopGenerating] = useState(false);
+  const [sopCopied, setSopCopied] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 60000);
@@ -409,6 +412,49 @@ export default function RhondaShell({ config = {} }) {
     await navigator.clipboard.writeText(text);
     setCopiedKey(`email-${type}-${idx}`);
     setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  // ── SOP Generation from Teach RHONDA interview ──
+  const generateSOP = async () => {
+    if (messages.length < 4) return;
+    setSopGenerating(true); setSopOutput("");
+    const transcript = messages
+      .map(m => `${m.role === "user" ? "Worker" : "RHONDA"}: ${m.content}`)
+      .join("\n\n");
+    try {
+      const res = await fetch("/api/sop-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcript,
+          companyName,
+          department: "",
+          fromInterview: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `API error: ${res.status}`);
+      setSopOutput(data.content?.[0]?.text || "No output generated.");
+    } catch (err) {
+      setError(`SOP generation failed: ${err.message}`);
+    } finally {
+      setSopGenerating(false);
+    }
+  };
+
+  const copySOP = () => {
+    navigator.clipboard.writeText(sopOutput);
+    setSopCopied(true);
+    setTimeout(() => setSopCopied(false), 2000);
+  };
+
+  const downloadSOP = () => {
+    const title = sopOutput.match(/^# SOP: (.+)$/m)?.[1] || "procedure";
+    const filename = `SOP_${title.replace(/[^a-zA-Z0-9]/g, "_")}.md`;
+    const blob = new Blob([sopOutput], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFileDrop = async (taskId, files) => {
@@ -604,7 +650,7 @@ export default function RhondaShell({ config = {} }) {
             {TASKS.map(t => {
               const isActive = activeTask === t.id;
               return (
-                <div key={t.id} onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); setFileDoc(null); }}
+                <div key={t.id} onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); setFileDoc(null); setSopOutput(""); setSopGenerating(false); }}
                   style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, cursor: "pointer", background: isActive ? T.goldBg15 : "transparent", color: isActive ? T.gold : "#8a9b7a", transition: "all 0.2s", marginBottom: 1, position: "relative" }}
                   onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
                   onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
@@ -687,7 +733,7 @@ export default function RhondaShell({ config = {} }) {
                       : "0 8px 24px rgba(0,0,0,0.2)";
                     return (
                       <div key={t.id}
-                        onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); setFileDoc(null); }}
+                        onClick={() => { setActiveTask(t.id); setMessages([]); setInput(""); setError(""); setFileDoc(null); setSopOutput(""); setSopGenerating(false); }}
                         onDragOver={e => { e.preventDefault(); setDragOver(t.id); }}
                         onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(null); }}
                         onDrop={e => { e.preventDefault(); setDragOver(null); handleFileDrop(t.id, e.dataTransfer.files); }}
@@ -904,6 +950,52 @@ export default function RhondaShell({ config = {} }) {
                     )}
 
                     {error && <div style={{ padding: "10px 14px", borderRadius: 10, background: T.redDim, border: `1px solid rgba(224,90,90,0.2)`, fontSize: 12, color: T.red, marginTop: 6 }}>⚠️ {error}</div>}
+
+                    {/* ── Generate SOP button (Teach mode, 4+ messages) ── */}
+                    {activeTask === "teach" && messages.filter(m => m.role === "user").length >= 2 && !sopOutput && !sopGenerating && (
+                      <div style={{ textAlign: "center", padding: "16px 0 8px" }}>
+                        <button onClick={generateSOP}
+                          style={{ padding: "10px 24px", borderRadius: 10, border: `1px solid ${T.brandBorder}`, background: T.brandBg15, color: T.brand, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif", display: "inline-flex", alignItems: "center", gap: 8, transition: "all 0.2s" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = T.brandBg15; e.currentTarget.style.boxShadow = T.brandGlow12; }}
+                          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                          Generate SOP from this interview
+                        </button>
+                        <div style={{ fontSize: 11, color: T.textDim, marginTop: 6 }}>Creates a formatted Standard Operating Procedure from the conversation above</div>
+                      </div>
+                    )}
+
+                    {/* ── SOP generating spinner ── */}
+                    {sopGenerating && (
+                      <div style={{ textAlign: "center", padding: "24px 0" }}>
+                        <div style={{ width: 32, height: 32, border: `3px solid ${T.border}`, borderTop: `3px solid ${T.brand}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+                        <div style={{ fontSize: 13, color: T.textMuted, fontWeight: 500 }}>RHONDA is writing your SOP...</div>
+                        <div style={{ fontSize: 11, color: T.textDim, marginTop: 4 }}>This takes about 10-15 seconds</div>
+                      </div>
+                    )}
+
+                    {/* ── SOP Output ── */}
+                    {sopOutput && (
+                      <div style={{ margin: "16px 0 8px", padding: 20, background: T.bgAlt, borderRadius: 12, border: `1px solid ${T.brandBorder}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: T.brand, letterSpacing: "0.1em", textTransform: "uppercase" }}>Generated SOP</div>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button onClick={copySOP}
+                              style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, border: `1px solid ${T.border}`, background: sopCopied ? T.greenDim : T.surface, color: sopCopied ? T.green : T.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                              {sopCopied ? Icons.check : Icons.copy}
+                              {sopCopied ? "Copied!" : "Copy"}
+                            </button>
+                            <button onClick={downloadSOP}
+                              style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, border: `1px solid ${T.brandBorder}`, background: T.brandBg15, color: T.brand, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                              {Icons.download}
+                              Download .md
+                            </button>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 13, lineHeight: 1.7, color: T.text, whiteSpace: "pre-wrap", fontFamily: "'Outfit', sans-serif" }}>{sopOutput}</div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Input */}
@@ -930,6 +1022,7 @@ export default function RhondaShell({ config = {} }) {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         textarea::placeholder { color: ${T.textDim}; }
         ::-webkit-scrollbar { width: 5px; }
