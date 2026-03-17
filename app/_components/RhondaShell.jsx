@@ -118,6 +118,21 @@ const Icons = {
 };
 
 // ══════════════════════════════════════════════════
+// STEP SEQUENCES — maps task IDs to animated progress labels
+// ══════════════════════════════════════════════════
+const STEP_SEQUENCES = {
+  email:     [{ label: "Reading your request…", delay: 0 }, { label: "Drafting email…", delay: 1200 }, { label: "Polishing tone…", delay: 2800 }],
+  data:      [{ label: "Parsing your data…", delay: 0 }, { label: "Organizing columns…", delay: 1400 }, { label: "Building table…", delay: 3000 }],
+  docs:      [{ label: "Reading document…", delay: 0 }, { label: "Finding key sections…", delay: 1500 }, { label: "Summarizing…", delay: 3200 }],
+  calendar:  [{ label: "Checking schedule…", delay: 0 }, { label: "Finding availability…", delay: 1200 }],
+  customers: [{ label: "Reading context…", delay: 0 }, { label: "Drafting reply…", delay: 1200 }, { label: "Reviewing tone…", delay: 2600 }],
+  teach:     [{ label: "Reviewing your answer…", delay: 0 }, { label: "Preparing follow-up…", delay: 1000 }],
+  rhonda:    [{ label: "Thinking…", delay: 0 }, { label: "Working on it…", delay: 1500 }],
+  leo:       [{ label: "Preparing data for LEO…", delay: 0 }, { label: "Sending…", delay: 1200 }],
+  sop:       [{ label: "Reading transcript…", delay: 0 }, { label: "Identifying steps…", delay: 2000 }, { label: "Writing safety checks…", delay: 5000 }, { label: "Formatting SOP…", delay: 8000 }, { label: "Final review…", delay: 11000 }],
+};
+
+// ══════════════════════════════════════════════════
 // SHEETS EXPORT UTILITIES
 // ══════════════════════════════════════════════════
 
@@ -361,6 +376,8 @@ export default function RhondaShell({ config = {} }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [agentStep, setAgentStep] = useState("");
+  const [sopStep, setSopStep] = useState("");
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
   const [time, setTime] = useState(new Date());
@@ -384,6 +401,15 @@ export default function RhondaShell({ config = {} }) {
     if (h < 12) return "Good morning";
     if (h < 17) return "Good afternoon";
     return "Good evening";
+  };
+
+  const startStepTimer = (taskId, setter) => {
+    const steps = STEP_SEQUENCES[taskId] || STEP_SEQUENCES.rhonda;
+    const timeouts = [];
+    steps.forEach(({ label, delay }) => {
+      timeouts.push(setTimeout(() => setter(label), delay));
+    });
+    return () => timeouts.forEach(clearTimeout);
   };
 
   const handleCopyForSheets = async (content, idx, tableData) => {
@@ -418,6 +444,7 @@ export default function RhondaShell({ config = {} }) {
   const generateSOP = async () => {
     if (messages.length < 4) return;
     setSopGenerating(true); setSopOutput("");
+    const cleanupSopSteps = startStepTimer("sop", setSopStep);
     const transcript = messages
       .map(m => `${m.role === "user" ? "Worker" : "RHONDA"}: ${m.content}`)
       .join("\n\n");
@@ -438,7 +465,9 @@ export default function RhondaShell({ config = {} }) {
     } catch (err) {
       setError(`SOP generation failed: ${err.message}`);
     } finally {
-      setSopGenerating(false);
+      cleanupSopSteps();
+      setSopStep("Done ✓");
+      setTimeout(() => { setSopStep(""); setSopGenerating(false); }, 400);
     }
   };
 
@@ -518,6 +547,7 @@ export default function RhondaShell({ config = {} }) {
     if (!input.trim() || loading) return;
     if (totalMessages >= MAX_MESSAGES) { setGated(true); return; }
     setLoading(true); setError("");
+    const cleanupSteps = startStepTimer(activeTask, setAgentStep);
     const task = TASKS.find(t => t.id === activeTask);
     const userMsg = { role: "user", content: input };
     const newMessages = [...messages, userMsg];
@@ -587,7 +617,9 @@ export default function RhondaShell({ config = {} }) {
         if (totalMessages >= MAX_MESSAGES - 1) setTimeout(() => setGated(true), 2000);
       }
     } catch { setError("Could not connect to RHONDA. Check your connection."); }
-    setLoading(false);
+    cleanupSteps();
+    setAgentStep("Done ✓");
+    setTimeout(() => { setAgentStep(""); setLoading(false); }, 400);
   };
 
   const task = TASKS.find(t => t.id === activeTask);
@@ -938,7 +970,17 @@ export default function RhondaShell({ config = {} }) {
                       </div>
                     ))}
 
-                    {loading && (
+                    {loading && agentStep && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0" }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg, ${T.brand}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B1A14" strokeWidth="2.5"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
+                        </div>
+                        <div key={agentStep} style={{ padding: "10px 16px", borderRadius: 14, background: T.surfaceHover, fontSize: 13, color: T.textMuted, fontWeight: 500, animation: "stepFadeIn 0.3s ease" }}>
+                          {agentStep}
+                        </div>
+                      </div>
+                    )}
+                    {loading && !agentStep && (
                       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0" }}>
                         <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg, ${T.brand}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B1A14" strokeWidth="2.5"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
@@ -967,10 +1009,10 @@ export default function RhondaShell({ config = {} }) {
                     )}
 
                     {/* ── SOP generating spinner ── */}
-                    {sopGenerating && (
+                    {sopGenerating && sopStep && (
                       <div style={{ textAlign: "center", padding: "24px 0" }}>
                         <div style={{ width: 32, height: 32, border: `3px solid ${T.border}`, borderTop: `3px solid ${T.brand}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-                        <div style={{ fontSize: 13, color: T.textMuted, fontWeight: 500 }}>RHONDA is writing your SOP...</div>
+                        <div key={sopStep} style={{ fontSize: 13, color: T.textMuted, fontWeight: 500, animation: "stepFadeIn 0.3s ease" }}>{sopStep}</div>
                         <div style={{ fontSize: 11, color: T.textDim, marginTop: 4 }}>This takes about 10-15 seconds</div>
                       </div>
                     )}
@@ -1022,6 +1064,7 @@ export default function RhondaShell({ config = {} }) {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+        @keyframes stepFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         textarea::placeholder { color: ${T.textDim}; }
