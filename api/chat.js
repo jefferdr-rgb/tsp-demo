@@ -3,8 +3,6 @@ const PII_PATTERNS = [
   { pattern: /\b\d{3}-\d{2}-\d{4}\b/g, label: "[SSN REDACTED]" },
   { pattern: /\b\d{9}\b(?=\s|$|,|\.)/g, label: "[SSN REDACTED]" },
   { pattern: /\b(?:4\d{3}|5[1-5]\d{2}|3[47]\d{2}|6(?:011|5\d{2}))[- ]?\d{4}[- ]?\d{4}[- ]?\d{1,4}\b/g, label: "[CARD REDACTED]" },
-  { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, label: "[EMAIL REDACTED]" },
-  { pattern: /\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, label: "[PHONE REDACTED]" },
   { pattern: /\b(?:acct|account|routing)[\s#:]*\d{6,17}\b/gi, label: "[ACCOUNT REDACTED]" },
 ];
 
