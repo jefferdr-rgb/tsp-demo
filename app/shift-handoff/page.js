@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const C = {
   bg: "#f4f1ea", surface: "#ffffff", chrome: "#2c3528", gold: "#c49b2a",
@@ -120,8 +120,42 @@ const STATUS_STYLE = {
 };
 
 export default function ShiftHandoffPage() {
+  const [shifts, setShifts] = useState(SHIFTS);
   const [expandedId, setExpandedId] = useState(SHIFTS[0].id);
   const [speaking, setSpeaking] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/data?table=shifts&order=start_time&asc=false&limit=10").then(r => r.json()),
+      fetch("/api/data?table=shift_handoffs&order=created_at&asc=false&limit=10").then(r => r.json()),
+    ])
+      .then(([shiftData, handoffData]) => {
+        if (shiftData.source === "demo" || !shiftData.data?.length) return;
+        const handoffs = handoffData.data || [];
+
+        const live = shiftData.data.map((s, i) => {
+          const handoff = handoffs.find(h => h.shift_id === s.id);
+          const sections = handoff?.sections || [];
+          return {
+            id: s.id || `shift-${i}`,
+            shift: s.shift_name || s.shift_type || "Shift",
+            date: new Date(s.start_time).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+            time: `${new Date(s.start_time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} — ${new Date(s.end_time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
+            supervisor: s.supervisor_name || "Unknown",
+            crew: s.crew_count || 0,
+            status: s.status || "completed",
+            summary: handoff?.summary || s.notes || "No handoff summary available.",
+            sections: sections.length > 0 ? sections : [{
+              title: "Notes", icon: "📋",
+              items: [{ text: handoff?.summary || s.notes || "No details recorded.", status: "info" }],
+            }],
+          };
+        });
+        setShifts(live);
+        if (live.length) setExpandedId(live[0].id);
+      })
+      .catch(() => {});
+  }, []);
 
   const speakHandoff = (shift) => {
     if (speaking) {
@@ -170,7 +204,7 @@ export default function ShiftHandoffPage() {
 
         {/* Shift list */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {SHIFTS.map(shift => {
+          {shifts.map(shift => {
             const isExpanded = expandedId === shift.id;
             const dangerCount = shift.sections.flatMap(s => s.items).filter(i => i.status === "danger").length;
             const warningCount = shift.sections.flatMap(s => s.items).filter(i => i.status === "warning").length;

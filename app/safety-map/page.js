@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 const C = {
   bg: "#f4f1ea", surface: "#ffffff", chrome: "#2c3528", gold: "#c49b2a",
@@ -70,11 +70,31 @@ export default function SafetyMapPage() {
   const [selectedZone, setSelectedZone] = useState(null);
   const [timeRange, setTimeRange] = useState(90); // days
   const [typeFilter, setTypeFilter] = useState("all");
+  const [incidents, setIncidents] = useState(DEMO_INCIDENTS);
+
+  useEffect(() => {
+    fetch("/api/data?table=incidents&order=created_at&asc=false&limit=200")
+      .then(r => r.json())
+      .then(data => {
+        if (data.source === "demo" || !data.data?.length) return;
+        const live = data.data.map((inc, i) => ({
+          id: inc.id || i,
+          zone: inc.zone || inc.location || "lineA",
+          type: inc.incident_type || inc.type || "equipment",
+          severity: inc.severity || "Medium",
+          date: inc.incident_date || inc.created_at?.split("T")[0] || "",
+          desc: inc.description || "",
+          status: inc.status || "open",
+        }));
+        setIncidents(live);
+      })
+      .catch(() => {});
+  }, []);
 
   const filtered = useMemo(() => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - timeRange);
-    return DEMO_INCIDENTS.filter(inc => {
+    return incidents.filter(inc => {
       if (new Date(inc.date) < cutoff) return false;
       if (typeFilter !== "all" && inc.type !== typeFilter) return false;
       return true;

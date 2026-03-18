@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const C = {
   bg: "#f4f1ea", surface: "#ffffff", chrome: "#2c3528", gold: "#c49b2a",
@@ -91,10 +91,63 @@ function ProgressRing({ value, max, size = 60, color }) {
 export default function ScorecardPage() {
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [view, setView] = useState("workers"); // workers | zones
+  const [workers, setWorkers] = useState(WORKERS);
+  const [zoneStreaks, setZoneStreaks] = useState(ZONE_STREAKS);
 
-  const totalROI = WORKERS.reduce((sum, w) => sum + w.roi, 0);
-  const avgStreak = Math.round(WORKERS.reduce((sum, w) => sum + w.safetyStreak, 0) / WORKERS.length);
-  const longestStreak = Math.max(...WORKERS.map(w => w.safetyStreak));
+  useEffect(() => {
+    // Fetch workers
+    fetch("/api/data?table=workers&order=name&asc=true")
+      .then(r => r.json())
+      .then(data => {
+        if (data.source === "demo" || !data.data?.length) return;
+        // Also fetch safety streaks to merge
+        return fetch("/api/data?table=safety_streaks&order=current_streak&asc=false")
+          .then(r => r.json())
+          .then(streakData => {
+            const streaks = streakData.data || [];
+            const workerStreaks = streaks.filter(s => s.entity_type === "worker");
+            const zoneStreakRows = streaks.filter(s => s.entity_type === "zone");
+
+            const live = data.data.map((w, i) => {
+              const streak = workerStreaks.find(s => s.entity_id === w.id);
+              return {
+                id: w.id || i,
+                name: w.name,
+                dept: w.department,
+                role: w.role,
+                avatar: w.avatar_initials || w.name.split(" ").map(n => n[0]).join(""),
+                color: w.avatar_color || "#8E6B3E",
+                safetyStreak: streak?.current_streak || 0,
+                personalBest: streak?.personal_best || 0,
+                incidentFreeZone: w.department,
+                weeklyStats: { sopsCreated: 0, incidentsReported: 0, complianceScans: 0, bountiesClaimed: 0, shiftsCompleted: 0 },
+                roi: 0,
+                roiBreakdown: { sopValue: 0, safetyValue: 0, complianceValue: 0 },
+                badges: streak?.current_streak >= 200 ? ["🔥 200+ Day Streak"] : streak?.current_streak >= 100 ? ["🔥 100+ Day Streak"] : streak?.current_streak >= 30 ? ["✨ 30+ Day Streak"] : ["🌱 Active"],
+                trend: "stable",
+              };
+            });
+            setWorkers(live);
+
+            if (zoneStreakRows.length > 0) {
+              const ZONE_ICONS = { qclab: "🔬", breakroom: "☕", lineA: "🏭", maintenance: "⚙️", packaging: "📦", warehouse: "📦", loading: "🚛", chemical: "⚗️" };
+              const ZONE_COLORS = { qclab: C.green, breakroom: "#6495ED", lineA: C.gold, maintenance: "#E67E22", packaging: "#8E44AD", warehouse: C.danger, loading: C.textMuted, chemical: "#27AE60" };
+              const liveZones = zoneStreakRows.map(z => ({
+                zone: z.entity_name,
+                streak: z.current_streak,
+                icon: ZONE_ICONS[z.entity_id] || "📍",
+                color: ZONE_COLORS[z.entity_id] || C.gold,
+              }));
+              setZoneStreaks(liveZones);
+            }
+          });
+      })
+      .catch(() => {});
+  }, []);
+
+  const totalROI = workers.reduce((sum, w) => sum + w.roi, 0);
+  const avgStreak = Math.round(workers.reduce((sum, w) => sum + w.safetyStreak, 0) / workers.length);
+  const longestStreak = Math.max(...workers.map(w => w.safetyStreak));
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Outfit', system-ui, sans-serif" }}>
@@ -123,7 +176,7 @@ export default function ScorecardPage() {
             { label: "Team ROI This Week", value: `$${totalROI.toLocaleString()}`, color: C.green },
             { label: "Avg Safety Streak", value: `${avgStreak} days`, color: C.gold },
             { label: "Longest Streak", value: `${longestStreak} days`, color: C.forest },
-            { label: "Active Workers", value: WORKERS.length, color: C.forest },
+            { label: "Active Workers", value: workers.length, color: C.forest },
           ].map((card, i) => (
             <div key={i} style={{ background: C.surface, borderRadius: 12, padding: "14px 12px", textAlign: "center", border: `1px solid ${C.borderLight}` }}>
               <div style={{ fontSize: 10, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{card.label}</div>
@@ -149,7 +202,7 @@ export default function ScorecardPage() {
 
         {view === "workers" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {WORKERS.map(worker => {
+            {workers.map(worker => {
               const isSelected = selectedWorker === worker.id;
               const streakColor = worker.safetyStreak >= 100 ? C.green : worker.safetyStreak >= 30 ? C.gold : worker.safetyStreak >= 7 ? "#E67E22" : C.textMuted;
               return (
@@ -252,7 +305,7 @@ export default function ScorecardPage() {
 
         {view === "zones" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {ZONE_STREAKS.sort((a, b) => b.streak - a.streak).map((zone, i) => {
+            {zoneStreaks.sort((a, b) => b.streak - a.streak).map((zone, i) => {
               const streakColor = zone.streak >= 200 ? C.green : zone.streak >= 100 ? C.gold : zone.streak >= 30 ? "#E67E22" : zone.streak < 7 ? C.danger : C.textMuted;
               const barWidth = Math.min((zone.streak / 365) * 100, 100);
               return (

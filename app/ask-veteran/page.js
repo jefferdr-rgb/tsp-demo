@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useVoiceInput } from "../_lib/useVoiceInput";
 
 const C = {
@@ -58,12 +58,56 @@ export default function AskVeteranPage() {
   const [mode, setMode] = useState("browse"); // browse | ask
   const [selectedTag, setSelectedTag] = useState(null);
   const resultRef = useRef(null);
+  const [veterans, setVeterans] = useState(VETERANS);
+  const [knowledgeEntries, setKnowledgeEntries] = useState(KNOWLEDGE_ENTRIES);
 
-  const allTags = [...new Set(KNOWLEDGE_ENTRIES.flatMap(e => e.tags))].sort();
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/data?table=veteran_knowledge&order=upvotes&asc=false").then(r => r.json()),
+      fetch("/api/data?table=workers&order=name&asc=true").then(r => r.json()),
+    ])
+      .then(([vkData, wData]) => {
+        if (vkData.source === "demo" || !vkData.data?.length) return;
+        const workerMap = {};
+        (wData.data || []).forEach(w => { workerMap[w.id] = w; });
+
+        // Build veterans list from workers who contributed knowledge
+        const vetIds = [...new Set(vkData.data.map(e => e.veteran_id))];
+        const liveVets = vetIds.map(id => {
+          const w = workerMap[id];
+          if (!w) return null;
+          const contribs = vkData.data.filter(e => e.veteran_id === id).length;
+          return {
+            id: w.id,
+            name: w.name,
+            role: `${w.role} — ${w.department}`,
+            years: w.years_experience || 0,
+            avatar: w.avatar_initials || w.name.split(" ").map(n => n[0]).join(""),
+            color: w.avatar_color || "#8E6B3E",
+            contributions: contribs,
+          };
+        }).filter(Boolean);
+        if (liveVets.length) setVeterans(liveVets);
+
+        const liveEntries = vkData.data.map((e, i) => ({
+          id: e.id || i,
+          veteran: e.veteran_id,
+          question: e.question,
+          answer: e.answer,
+          tags: e.tags || [],
+          upvotes: e.upvotes || 0,
+          verified: e.is_verified ?? true,
+        }));
+        setKnowledgeEntries(liveEntries);
+      })
+      .catch(() => {});
+  }, []);
+
+  const allTags = [...new Set(knowledgeEntries.flatMap(e => e.tags))].sort();
 
   const filteredEntries = selectedTag
-    ? KNOWLEDGE_ENTRIES.filter(e => e.tags.includes(selectedTag))
-    : KNOWLEDGE_ENTRIES;
+    ? knowledgeEntries.filter(e => e.tags.includes(selectedTag))
+    : knowledgeEntries;
 
   const searchText = mode === "ask" ? voice.transcript : query;
 
@@ -82,8 +126,8 @@ export default function AskVeteranPage() {
           system: `You are RHONDA's "Ask the Veteran" system. You have access to tribal knowledge contributed by experienced workers at Sunshine Mills pet food factory.
 
 Here is the knowledge base:
-${KNOWLEDGE_ENTRIES.map(e => {
-  const vet = VETERANS.find(v => v.id === e.veteran);
+${knowledgeEntries.map(e => {
+  const vet = veterans.find(v => v.id === e.veteran);
   return `---\nExpert: ${vet?.name} (${vet?.role}, ${vet?.years} years)\nQ: ${e.question}\nA: ${e.answer}\nTags: ${e.tags.join(", ")}\n`;
 }).join("\n")}
 
@@ -143,7 +187,7 @@ RESPOND WITH VALID JSON:
 
         {/* Veteran profiles */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 28 }}>
-          {VETERANS.map(v => (
+          {veterans.map(v => (
             <div key={v.id} style={{
               background: C.surface, borderRadius: 14, padding: "16px 12px", textAlign: "center",
               border: `1px solid ${C.borderLight}`,
@@ -233,7 +277,7 @@ RESPOND WITH VALID JSON:
                   background: !selectedTag ? C.goldLight : C.surface,
                   color: !selectedTag ? C.gold : C.textMuted,
                 }}>
-                All ({KNOWLEDGE_ENTRIES.length})
+                All ({knowledgeEntries.length})
               </button>
               {allTags.map(tag => (
                 <button key={tag} onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
