@@ -93,8 +93,10 @@ export default function AcquisitionIntegratorPage() {
         }),
       });
       clearTimeout(timeout);
-      const data = await res.json();
-      setAskResult(data.content?.[0]?.text || data.error?.message || "No response");
+      let data;
+      try { data = await res.json(); } catch { throw new Error("Invalid response from server"); }
+      if (!res.ok) throw new Error(data?.error?.message || "Request failed");
+      setAskResult(data.content?.[0]?.text || "No response");
     } catch (err) {
       setAskResult(`Error: ${err.name === "AbortError" ? "Request timed out" : err.message}`);
     }

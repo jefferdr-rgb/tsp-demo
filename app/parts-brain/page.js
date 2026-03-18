@@ -79,8 +79,10 @@ Be specific with part numbers, prices, and availability. Format clearly.`,
         }),
       });
       clearTimeout(timeout);
-      const data = await res.json();
-      setResult({ type: "ai", text: data.content?.[0]?.text || data.error?.message || "No response" });
+      let data;
+      try { data = await res.json(); } catch { throw new Error("Invalid response from server"); }
+      if (!res.ok) throw new Error(data?.error?.message || "Request failed");
+      setResult({ type: "ai", text: data.content?.[0]?.text || "No response" });
     } catch (err) {
       setResult({ type: "ai", text: `Error: ${err.name === "AbortError" ? "Request timed out" : err.message}` });
     }
