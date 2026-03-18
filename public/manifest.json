@@ -53,6 +53,13 @@
       "url": "/compliance-scan",
       "description": "Photograph an area for instant regulatory analysis",
       "icons": [{ "src": "/icons/shortcut-scan.svg", "sizes": "96x96", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Bounty Board",
+      "short_name": "Bounties",
+      "url": "/bounty-board",
+      "description": "Get paid to document what you know",
+      "icons": [{ "src": "/icons/shortcut-sop.svg", "sizes": "96x96", "type": "image/svg+xml" }]
     }
   ]
 }
