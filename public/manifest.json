@@ -1,0 +1,58 @@
+{
+  "name": "RHONDA — AI Office Manager",
+  "short_name": "RHONDA",
+  "description": "Your AI-powered office manager. Draft emails, organize data, scan documents, report incidents, and more.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#c49b2a",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icons/icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Report Incident",
+      "short_name": "Incident",
+      "url": "/incident-report",
+      "description": "Voice or photo incident report",
+      "icons": [{ "src": "/icons/shortcut-incident.svg", "sizes": "96x96", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Scan Document",
+      "short_name": "Scan",
+      "url": "/photo-scan",
+      "description": "Photograph a paper document to digitize",
+      "icons": [{ "src": "/icons/shortcut-scan.svg", "sizes": "96x96", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Check Equipment",
+      "short_name": "Equipment",
+      "url": "/asset-manager",
+      "description": "Scan QR code or look up equipment",
+      "icons": [{ "src": "/icons/shortcut-equipment.svg", "sizes": "96x96", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "New SOP",
+      "short_name": "SOP",
+      "url": "/sop-generator",
+      "description": "Generate an SOP by voice",
+      "icons": [{ "src": "/icons/shortcut-sop.svg", "sizes": "96x96", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Voice Broadcast",
+      "short_name": "Broadcast",
+      "url": "/voice-broadcast",
+      "description": "Speak once, broadcast in every language",
+      "icons": [{ "src": "/icons/shortcut-incident.svg", "sizes": "96x96", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Compliance Scan",
+      "short_name": "Comply",
+      "url": "/compliance-scan",
+      "description": "Photograph an area for instant regulatory analysis",
+      "icons": [{ "src": "/icons/shortcut-scan.svg", "sizes": "96x96", "type": "image/svg+xml" }]
+    }
+  ]
+}
