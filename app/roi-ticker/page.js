@@ -58,10 +58,31 @@ function AnimatedCounter({ target, duration = 2000 }) {
   return <>{current.toLocaleString()}</>;
 }
 
+const CATEGORY_ICONS = { sop: "📋", incident: "🛡️", compliance: "✅", onboard: "👤", translate: "🔊", teach: "🧠" };
+
 export default function ROITickerPage() {
-  const [events] = useState(DEMO_EVENTS);
+  const [events, setEvents] = useState(DEMO_EVENTS);
   const [visibleCount, setVisibleCount] = useState(5);
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  useEffect(() => {
+    fetch("/api/data?table=roi_events&order=created_at&asc=false")
+      .then(r => r.json())
+      .then(data => {
+        if (data.source === "demo" || !data.data?.length) return;
+        const live = data.data.map((e, i) => ({
+          id: e.id || i,
+          category: e.category,
+          label: e.label,
+          savings: e.savings_cents / 100,
+          unit: e.unit,
+          time: new Date(e.created_at).toLocaleDateString(),
+          icon: CATEGORY_ICONS[e.category] || "📋",
+        }));
+        setEvents(live);
+      })
+      .catch(() => {});
+  }, []);
 
   const totalSavings = events.reduce((sum, e) => sum + e.savings, 0);
   const categorySums = events.reduce((acc, e) => {

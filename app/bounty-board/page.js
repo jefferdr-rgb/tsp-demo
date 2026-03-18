@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const C = {
   bg: "#f4f1ea", surface: "#ffffff", chrome: "#2c3528", gold: "#c49b2a",
@@ -199,23 +199,122 @@ export default function BountyBoardPage() {
   const [expandedBounty, setExpandedBounty] = useState(null);
   const [claimingId, setClaimingId] = useState(null);
   const [claimed, setClaimed] = useState({});
+  const [bounties, setBounties] = useState(BOUNTIES);
+  const [workers, setWorkers] = useState(WORKERS);
+  const [gaps, setGaps] = useState(KNOWLEDGE_GAPS);
+  const [dataSource, setDataSource] = useState("demo");
 
-  const departments = [...new Set(BOUNTIES.map(b => b.dept))];
+  // Fetch live data from Supabase on mount
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [bRes, wRes, gRes, cRes, rRes] = await Promise.all([
+          fetch("/api/data?table=bounties&order=created_at&asc=false"),
+          fetch("/api/data?table=workers"),
+          fetch("/api/data?table=knowledge_gaps"),
+          fetch("/api/data?table=bounty_claims"),
+          fetch("/api/data?table=bounty_reviews"),
+        ]);
+        const [bData, wData, gData, cData, rData] = await Promise.all([
+          bRes.json(), wRes.json(), gRes.json(), cRes.json(), rRes.json(),
+        ]);
 
-  const filteredBounties = BOUNTIES.filter(b => {
+        if (bData.source === "demo" || !bData.data?.length) return;
+        setDataSource("supabase");
+
+        // Build worker lookup by UUID
+        const wMap = {};
+        (wData.data || []).forEach(w => {
+          wMap[w.id] = {
+            id: w.id, name: w.name, initials: w.avatar_initials,
+            color: w.avatar_color, role: w.role, dept: w.department,
+            exp: w.years_experience,
+          };
+        });
+        setWorkers(wMap);
+
+        // Build claims and reviews lookup by bounty
+        const claimsByBounty = {};
+        (cData.data || []).forEach(c => {
+          claimsByBounty[c.bounty_id] = c;
+        });
+        const reviewsByClaim = {};
+        (rData.data || []).forEach(r => {
+          if (!reviewsByClaim[r.claim_id]) reviewsByClaim[r.claim_id] = [];
+          reviewsByClaim[r.claim_id].push({
+            type: r.review_type, score: r.score,
+            feedback: r.feedback, passed: r.passed,
+            reviewer: r.reviewer_id,
+          });
+        });
+
+        // Transform bounties
+        const liveBounties = (bData.data || []).map(b => {
+          const claim = claimsByBounty[b.id];
+          const reviews = claim ? reviewsByClaim[claim.id] : undefined;
+          const daysLeft = b.expires_at ? Math.ceil((new Date(b.expires_at) - Date.now()) / 86400000) : 30;
+          return {
+            id: b.id, title: b.title, dept: b.department,
+            amount: b.amount_cents / 100, complexity: b.complexity,
+            description: b.description,
+            criteria: b.acceptance_criteria,
+            postedBy: b.posted_by, expiresIn: daysLeft,
+            status: b.status,
+            claimedBy: claim?.worker_id,
+            claimDeadline: claim ? `${Math.max(0, Math.ceil((new Date(claim.deadline) - Date.now()) / 3600000))} hrs` : undefined,
+            reviews,
+          };
+        });
+        setBounties(liveBounties);
+
+        // Transform knowledge gaps
+        const liveGaps = (gData.data || []).map(g => ({
+          topic: g.topic, reason: g.reason,
+          priority: g.priority,
+          amount: g.suggested_amount_cents / 100,
+          hasBounty: g.has_bounty,
+        }));
+        setGaps(liveGaps);
+      } catch (e) {
+        // Silently fall back to demo data
+      }
+    }
+    loadData();
+  }, []);
+
+  const departments = [...new Set(bounties.map(b => b.dept))];
+
+  const filteredBounties = bounties.filter(b => {
     if (filter !== "all" && b.status !== filter) return false;
     if (deptFilter !== "all" && b.dept !== deptFilter) return false;
     return true;
   });
 
-  const totalPool = BOUNTIES.filter(b => b.status === "open").reduce((s, b) => s + b.amount, 0);
-  const totalPaid = BOUNTIES.filter(b => b.status === "approved").reduce((s, b) => s + (b.paidAmount || 0), 0);
-  const openCount = BOUNTIES.filter(b => b.status === "open").length;
-  const claimedCount = BOUNTIES.filter(b => b.status === "claimed").length;
+  const totalPool = bounties.filter(b => b.status === "open").reduce((s, b) => s + b.amount, 0);
+  const totalPaid = bounties.filter(b => b.status === "approved").reduce((s, b) => s + (b.paidAmount || 0), 0);
+  const openCount = bounties.filter(b => b.status === "open").length;
+  const claimedCount = bounties.filter(b => b.status === "claimed").length;
   const overallCoverage = Math.round(COVERAGE_MAP.reduce((s, c) => s + c.documented, 0) / COVERAGE_MAP.reduce((s, c) => s + c.total, 0) * 100);
 
-  const handleClaim = (bountyId) => {
+  const handleClaim = async (bountyId) => {
     setClaimingId(bountyId);
+    // Pick a random demo worker to claim
+    const workerIds = Object.keys(workers);
+    const randomWorker = workerIds[Math.floor(Math.random() * workerIds.length)];
+
+    if (dataSource === "supabase") {
+      try {
+        await fetch("/api/data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            table: "bounty_claims",
+            record: { bounty_id: bountyId, worker_id: randomWorker, deadline: new Date(Date.now() + 48 * 3600000).toISOString(), status: "active" },
+          }),
+        });
+      } catch (e) { /* fall through to UI update */ }
+    }
+
     setTimeout(() => {
       setClaimed(prev => ({ ...prev, [bountyId]: true }));
       setClaimingId(null);
@@ -267,7 +366,7 @@ export default function BountyBoardPage() {
           {[
             { id: "board", label: "🎯 Bounties", count: BOUNTIES.length },
             { id: "coverage", label: "📊 Coverage Map" },
-            { id: "gaps", label: "🔴 Knowledge Gaps", count: KNOWLEDGE_GAPS.length },
+            { id: "gaps", label: "🔴 Knowledge Gaps", count: gaps.length },
             { id: "feed", label: "🏆 Recognition" },
           ].map(tab => (
             <button key={tab.id} onClick={() => setView(tab.id)}
@@ -320,8 +419,8 @@ export default function BountyBoardPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {filteredBounties.map(bounty => {
                 const isExpanded = expandedBounty === bounty.id;
-                const poster = WORKERS[bounty.postedBy];
-                const claimer = bounty.claimedBy ? WORKERS[bounty.claimedBy] : null;
+                const poster = workers[bounty.postedBy];
+                const claimer = bounty.claimedBy ? workers[bounty.claimedBy] : null;
                 const comp = COMPLEXITY_BADGE[bounty.complexity];
                 const stat = STATUS_BADGE[bounty.status];
                 const isClaimed = claimed[bounty.id];
@@ -395,7 +494,7 @@ export default function BountyBoardPage() {
                               <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Review Feedback</div>
                               {bounty.reviews.map((review, ri) => {
                                 const typeLabels = { ai_prescreen: "AI Pre-Screen", peer_review: "Peer Review", supervisor_approval: "Supervisor" };
-                                const reviewer = review.reviewer ? WORKERS[review.reviewer] : null;
+                                const reviewer = review.reviewer ? workers[review.reviewer] : null;
                                 return (
                                   <div key={ri} style={{
                                     padding: "10px 14px", borderRadius: 8, marginBottom: 6,
@@ -425,7 +524,7 @@ export default function BountyBoardPage() {
                             }}>
                               <span style={{ fontSize: 20 }}>💰</span>
                               <div>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>${bounty.paidAmount} paid to {WORKERS[bounty.paidTo]?.name}</div>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>${bounty.paidAmount} paid to {workers[bounty.paidTo]?.name}</div>
                                 <div style={{ fontSize: 11, color: C.textMuted }}>SOP added to official library • $10 peer review bonus paid to Carlos Vega</div>
                               </div>
                             </div>
@@ -514,7 +613,7 @@ export default function BountyBoardPage() {
             }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.danger, marginBottom: 4 }}>⚠️ Critical Gaps</div>
               <div style={{ fontSize: 12, color: C.text, lineHeight: 1.6 }}>
-                Safety Procedures and Warehouse Ops are below 50% documentation. RHONDA has detected {KNOWLEDGE_GAPS.filter(g => g.priority === "critical").length} critical knowledge gaps with single-expert dependency risk.
+                Safety Procedures and Warehouse Ops are below 50% documentation. RHONDA has detected {gaps.filter(g => g.priority === "critical").length} critical knowledge gaps with single-expert dependency risk.
                 <a href="#" onClick={(e) => { e.preventDefault(); setView("gaps"); }} style={{ color: C.gold, fontWeight: 600, marginLeft: 4 }}>View Knowledge Gaps →</a>
               </div>
             </div>
@@ -532,7 +631,7 @@ export default function BountyBoardPage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {KNOWLEDGE_GAPS.map((gap, i) => (
+              {gaps.map((gap, i) => (
                 <div key={i} style={{
                   background: C.surface, borderRadius: 14, padding: "18px 20px",
                   border: `1px solid ${gap.priority === "critical" ? "rgba(192,57,43,0.2)" : C.borderLight}`,
@@ -589,9 +688,9 @@ export default function BountyBoardPage() {
               <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>Knowledge Champions</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 {[
-                  { worker: WORKERS.w1, bounties: 10, earned: 475, level: "Knowledge Expert", emoji: "⭐" },
-                  { worker: WORKERS.w3, bounties: 6, earned: 230, level: "Knowledge Builder", emoji: "🔧" },
-                  { worker: WORKERS.w2, bounties: 4, earned: 150, level: "Knowledge Contributor", emoji: "📊" },
+                  { worker: workers.w1 || workers[Object.keys(workers)[0]], bounties: 10, earned: 475, level: "Knowledge Expert", emoji: "⭐" },
+                  { worker: workers.w3 || workers[Object.keys(workers)[2]], bounties: 6, earned: 230, level: "Knowledge Builder", emoji: "🔧" },
+                  { worker: workers.w2 || workers[Object.keys(workers)[1]], bounties: 4, earned: 150, level: "Knowledge Contributor", emoji: "📊" },
                 ].map((champ, i) => (
                   <div key={i} style={{
                     padding: "16px 14px", borderRadius: 12, textAlign: "center",
