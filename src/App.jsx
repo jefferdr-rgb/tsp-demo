@@ -110,50 +110,129 @@ function rowsToTSV(rows) {
   return rows.map(r => r.join("\t")).join("\n");
 }
 
-async function downloadXLSX(rows, filename = "rhonda-data.xlsx") {
+// Convert 0-based column index to Excel letter (0=A, 25=Z, 26=AA, etc.)
+function encodeCol(c) {
+  let s = "";
+  c++;
+  while (c > 0) { c--; s = String.fromCharCode(65 + (c % 26)) + s; c = Math.floor(c / 26); }
+  return s;
+}
+
+// Auto-detect formulas from parsed rows (totals, averages, subtotals)
+function detectFormulas(rows) {
+  if (!rows || rows.length < 3) return null;
+  const formulas = [];
+  for (let r = 1; r < rows.length; r++) {
+    const label = String(rows[r][0] || "").toLowerCase().trim();
+    const isTotal = /^(total|sum|subtotal|grand total)s?$/i.test(label) || label.includes("total");
+    const isAvg = /^(average|avg|mean)$/i.test(label) || label.includes("average");
+    if (!isTotal && !isAvg) continue;
+    for (let c = 1; c < rows[r].length; c++) {
+      const val = String(rows[r][c] || "").replace(/[$,%\s]/g, "");
+      if (!val || isNaN(parseFloat(val))) continue;
+      const col = encodeCol(c);
+      const dataStart = 2;
+      const dataEnd = r;
+      const fn = isAvg ? "AVERAGE" : "SUM";
+      formulas.push({ row: r - 1, col: c, formula: `=${fn}(${col}${dataStart}:${col}${dataEnd})` });
+    }
+  }
+  return formulas.length > 0 ? formulas : null;
+}
+
+async function downloadXLSX(rows, filename = "rhonda-data.xlsx", tableData = null) {
   const XLSX = await import("xlsx-js-style");
+
+  const thinBorderLight = { style: "thin", color: { rgb: "D6D1C4" } };
+  const thinBorderDark = { style: "thin", color: { rgb: "AAAAAA" } };
+  const baseBorder = { top: thinBorderLight, bottom: thinBorderLight, left: thinBorderLight, right: thinBorderLight };
+  const baseAlign = { vertical: "center", wrapText: true };
 
   const HEADER = {
     font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 },
     fill: { patternType: "solid", fgColor: { rgb: "2C3528" } },
-    border: {
-      top: { style: "thin", color: { rgb: "AAAAAA" } },
-      bottom: { style: "thin", color: { rgb: "AAAAAA" } },
-      left: { style: "thin", color: { rgb: "AAAAAA" } },
-      right: { style: "thin", color: { rgb: "AAAAAA" } },
-    },
-    alignment: { vertical: "center", wrapText: true },
+    border: { top: thinBorderDark, bottom: thinBorderDark, left: thinBorderDark, right: thinBorderDark },
+    alignment: baseAlign,
   };
-  const ROW_EVEN = {
-    fill: { patternType: "solid", fgColor: { rgb: "F4F1EA" } },
-    border: {
-      top: { style: "thin", color: { rgb: "D6D1C4" } },
-      bottom: { style: "thin", color: { rgb: "D6D1C4" } },
-      left: { style: "thin", color: { rgb: "D6D1C4" } },
-      right: { style: "thin", color: { rgb: "D6D1C4" } },
-    },
-    alignment: { vertical: "center", wrapText: true },
-  };
-  const ROW_ODD = {
-    fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
-    border: {
-      top: { style: "thin", color: { rgb: "D6D1C4" } },
-      bottom: { style: "thin", color: { rgb: "D6D1C4" } },
-      left: { style: "thin", color: { rgb: "D6D1C4" } },
-      right: { style: "thin", color: { rgb: "D6D1C4" } },
-    },
-    alignment: { vertical: "center", wrapText: true },
-  };
+  const ROW_EVEN = { fill: { patternType: "solid", fgColor: { rgb: "F4F1EA" } }, border: baseBorder, alignment: baseAlign };
+  const ROW_ODD = { fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } }, border: baseBorder, alignment: baseAlign };
+
+  const CELL_INPUT = { font: { color: { rgb: "0000CC" } } };
+  const CELL_ASSUMPTION = { fill: { patternType: "solid", fgColor: { rgb: "FFFDE7" } } };
+  const CELL_FORMULA = { font: { color: { rgb: "2C3528" } } };
+
+  const isFinancial = tableData?.isFinancialModel === true;
+  const formulas = tableData?.formulas || detectFormulas(rows);
+  const cellTypes = tableData?.cellTypes;
+
+  const formulaMap = {};
+  if (formulas) {
+    for (const f of formulas) formulaMap[`${f.row},${f.col}`] = f.formula;
+  }
+  const typeMap = {};
+  if (cellTypes) {
+    for (const ct of cellTypes) typeMap[`${ct.row},${ct.col}`] = ct.type;
+  }
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+
   for (let R = range.s.r; R <= range.e.r; R++) {
     for (let C = range.s.c; C <= range.e.c; C++) {
       const ref = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[ref]) ws[ref] = { v: "", t: "s" };
-      ws[ref].s = R === 0 ? HEADER : (R % 2 === 1 ? ROW_EVEN : ROW_ODD);
+
+      let style = R === 0 ? { ...HEADER } : (R % 2 === 1 ? { ...ROW_EVEN } : { ...ROW_ODD });
+
+      if (R > 0) {
+        const dataRow = R - 1;
+        const key = `${dataRow},${C}`;
+
+        const formula = formulaMap[key];
+        if (formula) {
+          const rawFormula = formula.startsWith("=") ? formula.slice(1) : formula;
+          const numVal = parseFloat(String(ws[ref].v || "0").replace(/[$,%\s]/g, ""));
+          ws[ref] = { f: rawFormula, v: isNaN(numVal) ? 0 : numVal, t: "n" };
+        }
+
+        if (isFinancial) {
+          const cellType = typeMap[key] || (formula ? "formula" : null);
+          if (cellType === "input") {
+            style = { ...style, font: { ...style.font, ...CELL_INPUT.font } };
+          } else if (cellType === "assumption") {
+            style = { ...style, fill: CELL_ASSUMPTION.fill, font: { ...style.font, bold: true } };
+          } else if (cellType === "formula") {
+            style = { ...style, font: { ...style.font, ...CELL_FORMULA.font } };
+          }
+        }
+
+        const origVal = String(rows[R]?.[C] ?? "");
+        if (origVal.includes("$") || origVal.includes("USD")) {
+          style.numFmt = '$#,##0.00;($#,##0.00);"-"';
+          if (ws[ref].t === "s") {
+            const n = parseFloat(origVal.replace(/[$,\s]/g, ""));
+            if (!isNaN(n)) { ws[ref].v = n; ws[ref].t = "n"; }
+          }
+        } else if (origVal.includes("%")) {
+          style.numFmt = "0.0%";
+          if (ws[ref].t === "s") {
+            const n = parseFloat(origVal.replace(/[%,\s]/g, ""));
+            if (!isNaN(n)) { ws[ref].v = n / 100; ws[ref].t = "n"; }
+          }
+        } else if (ws[ref].t === "s" && !formula) {
+          const cleaned = String(rows[R]?.[C] ?? "").replace(/[,\s]/g, "");
+          const n = parseFloat(cleaned);
+          if (!isNaN(n) && /^-?[\d,]+\.?\d*$/.test(cleaned)) {
+            ws[ref].v = n; ws[ref].t = "n";
+            style.numFmt = "#,##0;(#,##0)";
+          }
+        }
+      }
+
+      ws[ref].s = style;
     }
   }
+
   if (rows[0]) {
     ws["!cols"] = rows[0].map((_, ci) => ({
       wch: Math.min(60, Math.max(12, ...rows.map(r => String(r[ci] ?? "").length)))
@@ -161,9 +240,10 @@ async function downloadXLSX(rows, filename = "rhonda-data.xlsx") {
   }
   ws["!rows"] = rows.map((_, ri) => ({ hpx: ri === 0 ? 24 : 20 }));
   if (rows.length > 1) ws["!autofilter"] = { ref: ws["!ref"] };
+  ws["!freeze"] = { xSplit: 0, ySplit: 1, topLeftCell: "A2", state: "frozen" };
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "RHONDA Data");
+  XLSX.utils.book_append_sheet(wb, ws, isFinancial ? "Financial Model" : "RHONDA Data");
   XLSX.writeFile(wb, filename);
 }
 
@@ -273,7 +353,7 @@ async function parseFile(file) {
 // ══════════════════════════════════════════════════
 const TASKS = [
   { id: "email", label: "Email", icon: Icons.email, color: T.gold, description: "Draft, read, and send emails", placeholder: "What email do you need?\n\nExample: \"Write a follow-up to a customer about their recent installation\"", systemExtra: "Draft a professional, warm email. Include a subject line. Be concise." },
-  { id: "data", label: "Sheets", icon: Icons.data, color: T.green, description: "Organize job data and spreadsheets", placeholder: "What data do you need organized?\n\nExample: \"Organize last month's jobs by type and add revenue totals\"", systemExtra: "Organize business data. ALWAYS format tabular data as a markdown table using | pipe | characters | with a separator row (|---|---|) so the user can export to Google Sheets or Excel." },
+  { id: "data", label: "Sheets", icon: Icons.data, color: T.green, description: "Organize job data and spreadsheets", placeholder: "What data do you need organized?\n\nExample: \"Organize last month's jobs by type and add revenue totals\"", systemExtra: "Organize business data into structured tables. When the data involves calculations (totals, subtotals, averages, growth rates, margins, etc.), ALWAYS format as a markdown table using | pipe | characters | with a separator row (|---|---|). Use the word 'Total' or 'Average' as row labels so the Excel export can auto-detect and insert real formulas." },
   { id: "docs", label: "Drive", icon: Icons.docs, color: "#6495ED", description: "Find and summarize documents", placeholder: "What document do you need?\n\nExample: \"Summarize this vendor contract and flag anything unusual\"", systemExtra: "Summarize in plain English. Flag key dates, dollar amounts, action items, and anything unusual." },
   { id: "calendar", label: "Calendar", icon: Icons.calendar, color: "#E8C96A", description: "Manage events and scheduling", placeholder: "What do you need with the calendar?\n\nExample: \"Find an open slot next Tuesday for a job estimate\"", systemExtra: "Help manage the calendar. Confirm details before creating events." },
   { id: "customers", label: "Customers", icon: Icons.customers, color: T.beigeMuted, description: "Handle customer questions and responses", placeholder: "Paste the customer message or describe the situation...\n\nExample: \"A customer says our quote is too high — help me respond\"", systemExtra: "Draft professional, solution-oriented customer responses. Be confident but never defensive." },
@@ -329,7 +409,7 @@ export default function Dashboard() {
     const rows = tableData
       ? [tableData.headers, ...tableData.rows]
       : (extractTableRows(content) || content.split("\n").filter(Boolean).map(l => [l]));
-    await downloadXLSX(rows);
+    await downloadXLSX(rows, "rhonda-data.xlsx", tableData);
   };
 
   const handleCopyEmail = async (type, content, idx) => {
