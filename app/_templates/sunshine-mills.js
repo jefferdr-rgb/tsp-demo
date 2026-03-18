@@ -17,6 +17,8 @@ export const config = {
     customers: { description: "Handle buyer inquiries and distributor responses" },
   },
 
+  languages: ["en", "es", "vi"],
+
   demo: {
     maxMessages: 5,
     gatedCTA: true,

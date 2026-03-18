@@ -115,6 +115,11 @@ const Icons = {
   download: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
   check: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   teach: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+  camera: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+  shield: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  globe: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+  mic: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>,
+  clipboard: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>,
 };
 
 // ══════════════════════════════════════════════════
@@ -130,6 +135,10 @@ const STEP_SEQUENCES = {
   rhonda:    [{ label: "Thinking…", delay: 0 }, { label: "Working on it…", delay: 1500 }],
   leo:       [{ label: "Preparing data for LEO…", delay: 0 }, { label: "Sending…", delay: 1200 }],
   sop:       [{ label: "Reading transcript…", delay: 0 }, { label: "Identifying steps…", delay: 2000 }, { label: "Writing safety checks…", delay: 5000 }, { label: "Formatting SOP…", delay: 8000 }, { label: "Final review…", delay: 11000 }],
+  photo:     [{ label: "Analyzing image…", delay: 0 }, { label: "Extracting text…", delay: 1500 }, { label: "Structuring data…", delay: 3500 }],
+  compliance:[{ label: "Checking compliance data…", delay: 0 }, { label: "Scanning alerts…", delay: 1200 }],
+  incident:  [{ label: "Processing report…", delay: 0 }, { label: "Classifying severity…", delay: 1500 }, { label: "Generating document…", delay: 3000 }],
+  onboard:   [{ label: "Reading ID…", delay: 0 }, { label: "Extracting fields…", delay: 1500 }, { label: "Building form…", delay: 3000 }],
 };
 
 // ══════════════════════════════════════════════════
@@ -435,6 +444,8 @@ function getTasks(T, config = {}) {
     { id: "docs", label: "Drive", icon: Icons.docs, color: "#6495ED", description: "Find and summarize documents", placeholder: "What document do you need?\n\nExample: \"Summarize this vendor contract and flag anything unusual\"", systemExtra: "Summarize in plain English. Flag key dates, dollar amounts, action items, and anything unusual." },
     { id: "calendar", label: "Calendar", icon: Icons.calendar, color: "#E8C96A", description: "Manage events and scheduling", placeholder: "What do you need with the calendar?\n\nExample: \"Find an open slot next Tuesday for a job estimate\"", systemExtra: "Help manage the calendar. Confirm details before creating events." },
     { id: "customers", label: "Customers", icon: Icons.customers, color: T.beigeMuted, description: "Handle customer questions and responses", placeholder: "Paste the customer message or describe the situation...\n\nExample: \"A customer says our quote is too high — help me respond\"", systemExtra: "Draft professional, solution-oriented customer responses. Be confident but never defensive." },
+    { id: "photo", label: "Scan", icon: Icons.camera, color: "#8B5CF6", description: "Photograph any document — RHONDA digitizes it", placeholder: "Take a photo of a whiteboard, form, clipboard, or any paper document.\n\nRHONDA will extract and structure all the data.", systemExtra: "A worker has photographed a physical document. Digitize it into clean, structured, editable data. If it contains a table, format as markdown table. Preserve all numbers and measurements exactly.", isVision: true },
+    { id: "compliance", label: "Compliance", icon: Icons.shield, color: T.red, description: "Cert expirations, overdue inspections, training gaps", placeholder: "Ask about compliance status, certifications, inspections, or training...\n\nExample: \"Which certs expire this month?\" or \"Show me overdue inspections\"", systemExtra: "You have access to compliance data including employee certifications, inspections, and training records. Help the user understand their compliance status and take action on alerts." },
     { id: "teach", label: "Teach RHONDA", icon: Icons.teach, color: T.green, description: "Teach me your job — I'll learn the tasks, skills, and standards", placeholder: "Hit your mic key and tell me what you're working on.\n\nOr type: \"Let me walk you through how I process orders\" or \"I want to teach you about my daily routine\"", systemExtra: "", goldLabel: true, useTeachPrompt: true },
     { id: "rhonda", label: "Ask RHONDA", icon: Icons.ai, color: T.chrome, description: "General questions — anything you need", placeholder: "Ask RHONDA anything...\n\nExample: \"Help me write a job posting\" or \"What should I include in a bid proposal?\"", systemExtra: "Be helpful, direct, and practical.", goldLabel: true },
     { id: "leo", label: "Send to LEO", icon: Icons.data, color: T.gold, description: "Push spreadsheet data to your LEO dashboard", placeholder: "", systemExtra: "" },
@@ -481,11 +492,20 @@ export default function RhondaShell({ config = {} }) {
   const [sopOutput, setSopOutput] = useState("");
   const [sopGenerating, setSopGenerating] = useState(false);
   const [sopCopied, setSopCopied] = useState(false);
+  const [complianceAlerts, setComplianceAlerts] = useState(null);
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 60000);
     return () => clearInterval(t);
   }, []);
+
+  // Fetch compliance alerts on mount
+  useEffect(() => {
+    fetch(`/api/compliance/alerts?client_key=${clientKey}`)
+      .then(r => r.json())
+      .then(data => setComplianceAlerts(data))
+      .catch(() => {});
+  }, [clientKey]);
 
   const greeting = () => {
     const h = time.getHours();
@@ -839,9 +859,13 @@ export default function RhondaShell({ config = {} }) {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div style={{ color: T.textDim, cursor: "pointer" }}>{Icons.search}</div>
-              <div style={{ color: T.textDim, cursor: "pointer", position: "relative" }}>
+              <div onClick={() => { setActiveTask("compliance"); setMessages([]); setInput(""); setError(""); }} style={{ color: T.textDim, cursor: "pointer", position: "relative" }}>
                 {Icons.bell}
-                <div style={{ position: "absolute", top: -2, right: -2, width: 7, height: 7, borderRadius: "50%", background: T.red, border: `2px solid #ffffff` }} />
+                {complianceAlerts?.summary?.total > 0 && (
+                  <div style={{ position: "absolute", top: -4, right: -6, minWidth: 16, height: 16, borderRadius: 8, background: T.red, border: `2px solid #ffffff`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, color: "#fff", padding: "0 3px" }}>
+                    {complianceAlerts.summary.total}
+                  </div>
+                )}
               </div>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${T.surfaceHover}, ${T.surfaceActive})`, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: T.beigeMuted, cursor: "pointer" }}>YC</div>
             </div>
@@ -906,8 +930,37 @@ export default function RhondaShell({ config = {} }) {
                     );
                   })}
                 </div>
+                {/* Compliance Alert Banner */}
+                {complianceAlerts?.summary?.total > 0 && (
+                  <div onClick={() => { setActiveTask("compliance"); setMessages([]); setInput(""); setError(""); }}
+                    style={{ background: complianceAlerts.summary.critical > 0 ? T.redDim : T.goldDim, border: `1px solid ${complianceAlerts.summary.critical > 0 ? "rgba(197,48,48,0.2)" : T.goldBorder}`, borderRadius: 12, padding: "14px 18px", marginBottom: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, background: complianceAlerts.summary.critical > 0 ? T.red : T.gold, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 16 }}>
+                        {complianceAlerts.summary.total}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.beige }}>Compliance Alerts</div>
+                        <div style={{ fontSize: 11, color: T.textMuted }}>
+                          {complianceAlerts.summary.critical > 0 && <span style={{ color: T.red, fontWeight: 600 }}>{complianceAlerts.summary.critical} critical</span>}
+                          {complianceAlerts.summary.critical > 0 && complianceAlerts.summary.warning > 0 && " · "}
+                          {complianceAlerts.summary.warning > 0 && `${complianceAlerts.summary.warning} warnings`}
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: T.gold }}>View →</span>
+                  </div>
+                )}
+
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-                  {[{ label: "Tasks Today", value: "—", color: T.gold }, { label: "Emails Drafted", value: "—", color: T.green }, { label: "Docs Summarized", value: "—", color: "#6495ED" }, { label: "Time Saved", value: "—", color: T.beigeMuted }].map((s, i) => (
+                  {[
+                    { label: "Alerts", value: complianceAlerts?.summary?.total ?? "—", color: complianceAlerts?.summary?.critical > 0 ? T.red : T.gold },
+                    { label: "Certs Expiring", value: complianceAlerts?.summary?.byType?.cert_expiring ?? "—", color: T.gold },
+                    { label: "Overdue", value: (complianceAlerts?.summary?.byType?.cert_expired ?? 0) + (complianceAlerts?.summary?.byType?.inspection_overdue ?? 0) || "—", color: T.red },
+                    { label: "Training Gaps", value: complianceAlerts?.summary?.byType?.training_incomplete ?? "—", color: T.green },
+                  ].map((s, i) => (
                     <div key={i} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "18px 16px", textAlign: "center" }}>
                       <div style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
                       <div style={{ fontSize: 10, fontWeight: 600, color: T.textDim, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 6 }}>{s.label}</div>

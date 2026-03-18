@@ -25,6 +25,13 @@ function md(text) {
     .replace(/\n/g, "\n");
 }
 
+// ── Language config ──────────────────────────────────────────────────────────
+const LANGUAGES = [
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "es", label: "Espanol", flag: "🇲🇽" },
+  { code: "vi", label: "Tieng Viet", flag: "🇻🇳" },
+];
+
 // ── Demo asset data (localStorage-backed for prototype) ─────────────────────
 function getAssets() {
   if (typeof window === "undefined") return {};
@@ -134,9 +141,20 @@ export default function AssetPage() {
   const [asset, setAsset] = useState(null);
   const [activeTab, setActiveTab] = useState("sop");
   const [loading, setLoading] = useState(true);
+  const [currentLang, setCurrentLang] = useState("en");
+  const [translating, setTranslating] = useState(false);
+  const [translatedSops, setTranslatedSops] = useState({}); // { "es": "...", "vi": "..." }
+
+  // Detect browser language on mount
+  useEffect(() => {
+    const browserLang = navigator.language?.split("-")[0] || "en";
+    const supported = LANGUAGES.find(l => l.code === browserLang);
+    if (supported && supported.code !== "en") {
+      setCurrentLang(supported.code);
+    }
+  }, []);
 
   useEffect(() => {
-    // Check demo assets first, then localStorage
     if (DEMO_ASSETS[id]) {
       setAsset(DEMO_ASSETS[id]);
     } else {
@@ -145,6 +163,48 @@ export default function AssetPage() {
     }
     setLoading(false);
   }, [id]);
+
+  // Auto-translate when language changes
+  useEffect(() => {
+    if (!asset?.sop || currentLang === "en") return;
+    if (translatedSops[currentLang]) return; // already cached
+
+    // Check localStorage cache
+    const cacheKey = `sop_${id}_${currentLang}`;
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        setTranslatedSops(prev => ({ ...prev, [currentLang]: cached }));
+        return;
+      }
+    }
+
+    // Fetch translation
+    setTranslating(true);
+    fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: asset.sop,
+        targetLang: currentLang,
+        context: "a Standard Operating Procedure (SOP) for manufacturing equipment",
+      }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.translated) {
+          setTranslatedSops(prev => ({ ...prev, [currentLang]: data.translated }));
+          // Cache in localStorage
+          if (typeof window !== "undefined") {
+            localStorage.setItem(cacheKey, data.translated);
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  }, [currentLang, asset, id, translatedSops]);
+
+  const displaySop = currentLang === "en" ? asset?.sop : (translatedSops[currentLang] || asset?.sop);
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -177,15 +237,22 @@ export default function AssetPage() {
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>|</span>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{asset.department || "General"}</span>
           </div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{asset.name}</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>{asset.location}</div>
-          {asset.type && (
-            <span style={{
-              display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600,
-              background: "rgba(196,155,42,0.2)", color: C.gold, padding: "3px 10px",
-              borderRadius: 4, letterSpacing: 0.5
-            }}>{asset.type}</span>
-          )}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{asset.name}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>{asset.location}</div>
+              {asset.type && (
+                <span style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, background: "rgba(196,155,42,0.2)", color: C.gold, padding: "3px 10px", borderRadius: 4, letterSpacing: 0.5 }}>{asset.type}</span>
+              )}
+            </div>
+            {/* Action links */}
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <a href={`/incident-report?asset=${id}&location=${encodeURIComponent(asset.location)}&equipment=${encodeURIComponent(asset.name)}`}
+                style={{ fontSize: 11, fontWeight: 600, color: "#fff", background: C.danger, padding: "5px 12px", borderRadius: 6, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                ⚠ Report Issue
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -193,25 +260,11 @@ export default function AssetPage() {
       <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", gap: 0 }}>
           {tabs.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                flex: 1, padding: "12px 8px", border: "none", cursor: "pointer",
-                background: activeTab === tab.key ? C.goldLight : "transparent",
-                borderBottom: activeTab === tab.key ? `3px solid ${C.gold}` : "3px solid transparent",
-                color: activeTab === tab.key ? C.gold : C.textMuted,
-                fontWeight: activeTab === tab.key ? 700 : 500,
-                fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                transition: "all 0.15s",
-              }}
-            >
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              style={{ flex: 1, padding: "12px 8px", border: "none", cursor: "pointer", background: activeTab === tab.key ? C.goldLight : "transparent", borderBottom: activeTab === tab.key ? `3px solid ${C.gold}` : "3px solid transparent", color: activeTab === tab.key ? C.gold : C.textMuted, fontWeight: activeTab === tab.key ? 700 : 500, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.15s" }}>
               <span>{tab.icon}</span> {tab.label}
               {tab.key === "issues" && asset.issues?.filter(i => i.status === "open").length > 0 && (
-                <span style={{
-                  background: C.danger, color: "#fff", fontSize: 10, fontWeight: 700,
-                  borderRadius: 10, padding: "1px 6px", minWidth: 16, textAlign: "center"
-                }}>
+                <span style={{ background: C.danger, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 10, padding: "1px 6px", minWidth: 16, textAlign: "center" }}>
                   {asset.issues.filter(i => i.status === "open").length}
                 </span>
               )}
@@ -226,19 +279,46 @@ export default function AssetPage() {
         {/* SOP Tab */}
         {activeTab === "sop" && (
           <div>
+            {/* Language Selector */}
+            {asset.sop && (
+              <div style={{ display: "flex", gap: 6, marginBottom: 16, alignItems: "center" }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: C.textMuted, textTransform: "uppercase", letterSpacing: 1, marginRight: 4 }}>Language:</span>
+                {LANGUAGES.map(lang => (
+                  <button key={lang.code} onClick={() => setCurrentLang(lang.code)}
+                    style={{
+                      padding: "5px 12px", borderRadius: 20, border: `1px solid ${currentLang === lang.code ? C.gold : C.border}`,
+                      background: currentLang === lang.code ? C.goldLight : C.surface,
+                      color: currentLang === lang.code ? C.gold : C.textMuted,
+                      fontWeight: currentLang === lang.code ? 700 : 400, fontSize: 12,
+                      cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit",
+                      display: "flex", alignItems: "center", gap: 4,
+                    }}>
+                    <span>{lang.flag}</span> {lang.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {asset.sop ? (
-              <div
-                style={{
-                  background: C.surface, borderRadius: 10, padding: "20px 18px",
-                  border: `1px solid ${C.borderLight}`, fontSize: 13, lineHeight: 1.6, color: C.text,
-                }}
-                dangerouslySetInnerHTML={{ __html: md(asset.sop) }}
-              />
+              <div>
+                {/* Translation loading state */}
+                {translating && (
+                  <div style={{ textAlign: "center", padding: "16px 0 8px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    <div style={{ width: 16, height: 16, border: `2px solid ${C.borderLight}`, borderTop: `2px solid ${C.gold}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    <span style={{ fontSize: 13, color: C.textMuted }}>Translating to {LANGUAGES.find(l => l.code === currentLang)?.label}...</span>
+                  </div>
+                )}
+                <div
+                  style={{
+                    background: C.surface, borderRadius: 10, padding: "20px 18px",
+                    border: `1px solid ${C.borderLight}`, fontSize: 13, lineHeight: 1.6, color: C.text,
+                    opacity: translating ? 0.5 : 1, transition: "opacity 0.3s",
+                  }}
+                  dangerouslySetInnerHTML={{ __html: md(displaySop) }}
+                />
+              </div>
             ) : (
-              <div style={{
-                background: C.surface, borderRadius: 10, padding: 40, textAlign: "center",
-                border: `1px solid ${C.borderLight}`,
-              }}>
+              <div style={{ background: C.surface, borderRadius: 10, padding: 40, textAlign: "center", border: `1px solid ${C.borderLight}` }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
                 <div style={{ fontWeight: 700, color: C.text, marginBottom: 6 }}>No SOP Linked</div>
                 <div style={{ color: C.textMuted, fontSize: 13 }}>Use the SOP Generator to create one, then link it to this asset.</div>
@@ -251,17 +331,9 @@ export default function AssetPage() {
         {activeTab === "maintenance" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {asset.maintenance && asset.maintenance.length > 0 ? asset.maintenance.map((m, i) => (
-              <div key={i} style={{
-                background: C.surface, borderRadius: 10, padding: "14px 16px",
-                border: `1px solid ${C.borderLight}`,
-                borderLeft: `4px solid ${m.type === "Corrective" ? C.danger : C.gold}`,
-              }}>
+              <div key={i} style={{ background: C.surface, borderRadius: 10, padding: "14px 16px", border: `1px solid ${C.borderLight}`, borderLeft: `4px solid ${m.type === "Corrective" ? C.danger : C.gold}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
-                    color: m.type === "Corrective" ? C.danger : C.green,
-                    textTransform: "uppercase",
-                  }}>{m.type}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.5, color: m.type === "Corrective" ? C.danger : C.green, textTransform: "uppercase" }}>{m.type}</span>
                   <span style={{ fontSize: 12, color: C.textMuted }}>{m.date}</span>
                 </div>
                 <div style={{ fontSize: 13, color: C.text, lineHeight: 1.5 }}>{m.note}</div>
@@ -280,19 +352,11 @@ export default function AssetPage() {
         {activeTab === "issues" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {asset.issues && asset.issues.length > 0 ? asset.issues.map((issue, i) => (
-              <div key={i} style={{
-                background: issue.status === "open" ? C.dangerBg : C.surface,
-                borderRadius: 10, padding: "14px 16px",
-                border: `1px solid ${issue.status === "open" ? "rgba(192,57,43,0.2)" : C.borderLight}`,
-                borderLeft: `4px solid ${issue.status === "open" ? C.danger : C.green}`,
-              }}>
+              <div key={i} style={{ background: issue.status === "open" ? C.dangerBg : C.surface, borderRadius: 10, padding: "14px 16px", border: `1px solid ${issue.status === "open" ? "rgba(192,57,43,0.2)" : C.borderLight}`, borderLeft: `4px solid ${issue.status === "open" ? C.danger : C.green}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase",
-                    color: issue.status === "open" ? C.danger : C.green,
-                    background: issue.status === "open" ? "rgba(192,57,43,0.1)" : "rgba(74,101,64,0.1)",
-                    padding: "2px 8px", borderRadius: 4,
-                  }}>{issue.status === "open" ? "⚠ Open" : "✓ Resolved"}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: issue.status === "open" ? C.danger : C.green, background: issue.status === "open" ? "rgba(192,57,43,0.1)" : "rgba(74,101,64,0.1)", padding: "2px 8px", borderRadius: 4 }}>
+                    {issue.status === "open" ? "⚠ Open" : "✓ Resolved"}
+                  </span>
                   <span style={{ fontSize: 12, color: C.textMuted }}>Reported: {issue.reported}</span>
                 </div>
                 <div style={{ fontSize: 13, color: C.text, lineHeight: 1.5 }}>{issue.note}</div>
@@ -312,6 +376,10 @@ export default function AssetPage() {
           {asset.createdAt && <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>Asset registered: {asset.createdAt}</div>}
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }
