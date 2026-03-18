@@ -43,6 +43,10 @@ function buildTheme(config = {}) {
   const surface = config.surface || "#ffffff";
   const border = config.border || "#d6d1c4";
   const borderLight = config.borderLight || darken(border, -0.1);
+  // chromeAccent: visible version of chrome for use ON the bg (tiles, labels)
+  // On light themes: chrome itself (dark on light). On dark themes: light grey.
+  const isDark = luminance(bg) < 0.4;
+  const chromeAccent = isDark ? "#B0B8C4" : chrome;
 
   return {
     chrome,
@@ -79,12 +83,14 @@ function buildTheme(config = {}) {
     greenBg15: rgba(accentSecondary, 0.15),
     greenGlow12: `0 4px 20px ${rgba(accentSecondary, 0.12)}`,
     greenGlow25: `0 12px 36px ${rgba(accentSecondary, 0.25)}`,
-    // Chrome-derived (for Ask RHONDA tile — matches sidebar)
-    chromeBg08: rgba(chrome, 0.08),
-    chromeBg15: rgba(chrome, 0.15),
-    chromeBorder30: rgba(chrome, 0.3),
-    chromeGlow12: `0 4px 20px ${rgba(chrome, 0.12)}`,
-    chromeGlow25: `0 12px 36px ${rgba(chrome, 0.25)}`,
+    // Chrome-derived (for Ask RHONDA tile)
+    // On dark themes, use chromeAccent (light) so tile is visible
+    chromeAccent,
+    chromeBg08: rgba(chromeAccent, 0.08),
+    chromeBg15: rgba(chromeAccent, 0.15),
+    chromeBorder30: rgba(chromeAccent, 0.3),
+    chromeGlow12: `0 4px 20px ${rgba(chromeAccent, 0.12)}`,
+    chromeGlow25: `0 12px 36px ${rgba(chromeAccent, 0.25)}`,
     red: "#C53030",
     redDim: "rgba(197, 48, 48, 0.08)",
     // Auto-contrast text — adapts to bg luminance
@@ -546,7 +552,7 @@ function getTasks(T, config = {}) {
     { id: "photo", label: "Scan", icon: Icons.camera, color: "#8B5CF6", description: "Photograph any document — RHONDA digitizes it", placeholder: "Take a photo of a whiteboard, form, clipboard, or any paper document.\n\nRHONDA will extract and structure all the data.", systemExtra: "A worker has photographed a physical document. Digitize it into clean, structured, editable data. If it contains a table, format as markdown table. Preserve all numbers and measurements exactly.", isVision: true },
     { id: "compliance", label: "Compliance", icon: Icons.shield, color: T.red, description: "Cert expirations, overdue inspections, training gaps", placeholder: "Ask about compliance status, certifications, inspections, or training...\n\nExample: \"Which certs expire this month?\" or \"Show me overdue inspections\"", systemExtra: "You have access to compliance data including employee certifications, inspections, and training records. Help the user understand their compliance status and take action on alerts." },
     { id: "teach", label: "Teach RHONDA", icon: Icons.teach, color: T.green, description: "Teach me your job — I'll learn the tasks, skills, and standards", placeholder: "Hit your mic key and tell me what you're working on.\n\nOr type: \"Let me walk you through how I process orders\" or \"I want to teach you about my daily routine\"", systemExtra: "", goldLabel: true, useTeachPrompt: true },
-    { id: "rhonda", label: "Ask RHONDA", icon: Icons.ai, color: T.chrome, description: "General questions — anything you need", placeholder: "Ask RHONDA anything...\n\nExample: \"Help me write a job posting\" or \"What should I include in a bid proposal?\"", systemExtra: "Be helpful, direct, and practical.", goldLabel: true },
+    { id: "rhonda", label: "Ask RHONDA", icon: Icons.ai, color: T.chromeAccent, description: "General questions — anything you need", placeholder: "Ask RHONDA anything...\n\nExample: \"Help me write a job posting\" or \"What should I include in a bid proposal?\"", systemExtra: "Be helpful, direct, and practical.", goldLabel: true },
     { id: "leo", label: "Send to LEO", icon: Icons.data, color: T.gold, description: "Push spreadsheet data to your LEO dashboard", placeholder: "", systemExtra: "" },
   ];
 
@@ -991,7 +997,7 @@ export default function RhondaShell({ config = {} }) {
                 >
                   {isActive && <div style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 3, height: 18, borderRadius: 2, background: T.gold }} />}
                   <div style={{ width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>{t.icon}</div>
-                  <span style={{ fontSize: 12.5, fontWeight: isActive ? 600 : 400 }}>{t.id === "rhonda" ? <span>Ask <span style={{ color: T.chrome, fontWeight: 700 }}>RHONDA</span></span> : t.label}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: isActive ? 600 : 400 }}>{t.id === "rhonda" ? <span>Ask <span style={{ color: T.chromeAccent, fontWeight: 700 }}>RHONDA</span></span> : t.label}</span>
                 </div>
               );
             })}
@@ -1104,7 +1110,7 @@ export default function RhondaShell({ config = {} }) {
                           {isDrop ? Icons.upload : t.icon}
                         </div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: T.beige, marginBottom: 5 }}>
-                          {isTeachTile ? <span>Teach <span style={{ color: T.brand }}>RHONDA</span></span> : isRhondaTile ? <span>Ask <span style={{ color: T.chrome }}>RHONDA</span></span> : t.label}
+                          {isTeachTile ? <span>Teach <span style={{ color: T.brand }}>RHONDA</span></span> : isRhondaTile ? <span>Ask <span style={{ color: T.chromeAccent }}>RHONDA</span></span> : t.label}
                         </div>
                         <div style={{ fontSize: 12, color: isPremium ? T.text : T.textMuted, lineHeight: 1.5 }}>{t.description}</div>
                         <div style={{ marginTop: 14, fontSize: 11, fontWeight: 600, color: isPremium ? premiumColor : T.gold }}>{isDrop ? "Drop to upload →" : "Open →"}</div>
@@ -1186,7 +1192,7 @@ export default function RhondaShell({ config = {} }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: task.id === "teach" ? T.brandBg15 : task.id === "rhonda" ? T.chromeBg15 : T.surfaceHover, border: `1px solid ${task.id === "teach" ? T.brandBorder : task.id === "rhonda" ? T.chromeBorder30 : T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.color }}>{task.icon}</div>
                   <div>
-                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.beige }}>{task.id === "teach" ? <span>Teach <span style={{ color: T.brand }}>RHONDA</span></span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.chrome }}>RHONDA</span></span> : task.label}</h2>
+                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.beige }}>{task.id === "teach" ? <span>Teach <span style={{ color: T.brand }}>RHONDA</span></span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.chromeAccent }}>RHONDA</span></span> : task.label}</h2>
                     <p style={{ margin: "2px 0 0", fontSize: 13, color: T.textMuted }}>{task.description}</p>
                   </div>
                 </div>
@@ -1243,7 +1249,7 @@ export default function RhondaShell({ config = {} }) {
                       <div style={{ textAlign: "center", padding: "60px 20px" }}>
                         <div style={{ width: 52, height: 52, borderRadius: 14, background: task.id === "teach" ? T.brandBg15 : task.id === "rhonda" ? T.chromeBg15 : T.brandDim, border: `1px solid ${task.id === "teach" ? T.brandBorder : task.id === "rhonda" ? T.chromeBorder30 : T.brandBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: task.id === "teach" ? T.brand : task.id === "rhonda" ? T.chrome : T.brand, margin: "0 auto 16px" }}>{chatDragOver ? Icons.upload : task.icon}</div>
                         <div style={{ fontSize: 14, fontWeight: 500, color: T.textMuted, marginBottom: 6 }}>
-                          {chatDragOver ? <span style={{ color: T.brand, fontWeight: 700 }}>Drop your file here</span> : task.id === "teach" ? <span>Teach <span style={{ color: T.brand, fontWeight: 700 }}>RHONDA</span> your job</span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.chrome, fontWeight: 700 }}>RHONDA</span> anything</span> : <span>Ask <span style={{ color: T.brand, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
+                          {chatDragOver ? <span style={{ color: T.brand, fontWeight: 700 }}>Drop your file here</span> : task.id === "teach" ? <span>Teach <span style={{ color: T.brand, fontWeight: 700 }}>RHONDA</span> your job</span> : task.id === "rhonda" ? <span>Ask <span style={{ color: T.chromeAccent, fontWeight: 700 }}>RHONDA</span> anything</span> : <span>Ask <span style={{ color: T.brand, fontWeight: 700 }}>RHONDA</span> about {task.label.toLowerCase()}</span>}
                         </div>
                         <div style={{ fontSize: 12, color: T.textDim, maxWidth: 400, margin: "0 auto", lineHeight: 1.6 }}>
                           {chatDragOver ? "Release to load the file into this conversation." : <span>Type your request, or <span style={{ color: T.gold }}>drag a file</span> — Word, Excel, PowerPoint, PDF, CSV supported.{activeTask === "data" && " Results can be exported directly to Google Sheets or Excel."}</span>}
