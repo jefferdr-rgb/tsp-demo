@@ -2,8 +2,8 @@
 import { useState, useRef } from "react";
 
 const C = {
-  bg: "#f4f1ea", surface: "#ffffff", chrome: "#1A2F2A", accent: "#2E7D6F",
-  accentLight: "rgba(46,125,111,0.1)", red: "#C53030", green: "#22c55e",
+  bg: "#f4f1ea", surface: "#ffffff", chrome: "#1A2440", accent: "#3B77BB",
+  accentLight: "rgba(59,119,187,0.1)", red: "#C53030", green: "#22c55e",
   orange: "#F59E0B", border: "#d6d1c4", borderLight: "#e8e3d9",
   text: "#1a2a25", textMuted: "#5a6e65", gold: "#C49B2A", blue: "#3B82F6",
 };
@@ -132,7 +132,7 @@ export default function NarrativeWriterPage() {
         </div>
 
         {/* Instructions */}
-        <div style={{ background: C.accentLight, borderRadius: 12, border: `1px solid rgba(46,125,111,0.2)`, padding: 20, marginBottom: 24 }}>
+        <div style={{ background: C.accentLight, borderRadius: 12, border: `1px solid rgba(59,119,187,0.2)`, padding: 20, marginBottom: 24 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: C.accent, marginBottom: 6 }}>How Narrative Writer Works</div>
           <div style={{ fontSize: 13, color: C.text, lineHeight: 1.6 }}>
             RHONDA reads your uploaded policies, procedures, and evidence documents — then drafts self-study narratives for each COA standard area.

@@ -2,8 +2,8 @@
 import { useState } from "react";
 
 const C = {
-  bg: "#f4f1ea", surface: "#ffffff", chrome: "#1A2F2A", accent: "#2E7D6F",
-  accentLight: "rgba(46,125,111,0.1)", red: "#C53030", green: "#22c55e",
+  bg: "#f4f1ea", surface: "#ffffff", chrome: "#1A2440", accent: "#3B77BB",
+  accentLight: "rgba(59,119,187,0.1)", red: "#C53030", green: "#22c55e",
   orange: "#F59E0B", border: "#d6d1c4", borderLight: "#e8e3d9",
   text: "#1a2a25", textMuted: "#5a6e65", gold: "#C49B2A", blue: "#3B82F6",
 };
@@ -117,7 +117,7 @@ export default function PQIDashboardPage() {
         <a href="/kings-home" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: 14 }}>&larr; RHONDA Home</a>
         <div style={{ flex: 1 }} />
         <h1 style={{ color: "#fff", fontSize: 18, margin: 0, fontWeight: 600 }}>PQI Dashboard</h1>
-        <span style={{ padding: "4px 10px", borderRadius: 6, background: "rgba(46,125,111,0.15)", color: "#7BCDB8", fontSize: 11, fontWeight: 700 }}>Performance & Quality Improvement</span>
+        <span style={{ padding: "4px 10px", borderRadius: 6, background: "rgba(59,119,187,0.15)", color: "#7FB3E0", fontSize: 11, fontWeight: 700 }}>Performance & Quality Improvement</span>
       </div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 16px" }}>

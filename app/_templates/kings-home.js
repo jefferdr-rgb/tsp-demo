@@ -8,9 +8,9 @@
 export const config = {
   clientKey: "kings-home",
   companyName: "Kings Home",
-  accent: "#2E7D6F",          // deep teal — trust, care, stability
+  accent: "#3B77BB",          // Kings Home blue (from logo)
   accentSecondary: "#C49B2A", // warm gold — TSP brand tie-in
-  chrome: "#1A2F2A",          // dark forest sidebar
+  chrome: "#1A2440",          // deep navy sidebar
 
   systemPreamble: `You are RHONDA, the AI operations assistant for Kings Home — a residential child welfare organization serving women, children, and families across 21 homes on 6 campuses in 4 Alabama counties (Blount, Jefferson, Shelby, Tuscaloosa). Kings Home has 359 employees and serves approximately 275 residents annually.
 
