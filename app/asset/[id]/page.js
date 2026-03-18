@@ -145,6 +145,14 @@ export default function AssetPage() {
   const [translating, setTranslating] = useState(false);
   const [translatedSops, setTranslatedSops] = useState({}); // { "es": "...", "vi": "..." }
 
+  // Push asset-manager onto history so browser back goes somewhere useful (not exit)
+  useEffect(() => {
+    if (window.history.length <= 1) {
+      window.history.replaceState(null, "", "/asset-manager");
+      window.history.pushState(null, "", `/asset/${id}`);
+    }
+  }, [id]);
+
   // Detect browser language on mount
   useEffect(() => {
     const browserLang = navigator.language?.split("-")[0] || "en";
@@ -379,11 +387,53 @@ export default function AssetPage() {
           </div>
         )}
 
-        {/* Footer */}
-        <div style={{ textAlign: "center", marginTop: 30, paddingBottom: 20 }}>
+        {/* Footer — extra padding for bottom nav */}
+        <div style={{ textAlign: "center", marginTop: 30, paddingBottom: 80 }}>
           <div style={{ fontSize: 11, color: C.textMuted }}>Powered by RHONDA — Tree Stand Partners</div>
           {asset.createdAt && <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>Asset registered: {asset.createdAt}</div>}
         </div>
+      </div>
+
+      {/* Sticky bottom nav — mobile-first, big touch targets */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+        background: C.chrome, borderTop: `2px solid ${C.gold}`,
+        display: "flex", justifyContent: "space-around", alignItems: "center",
+        padding: "8px 0 max(8px, env(safe-area-inset-bottom))",
+      }}>
+        <a href="/asset-manager" style={{
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+          textDecoration: "none", color: "rgba(255,255,255,0.7)", padding: "6px 16px",
+          fontSize: 10, fontWeight: 600, letterSpacing: 0.3,
+        }}>
+          <span style={{ fontSize: 20 }}>📋</span>
+          All Assets
+        </a>
+        <a href="/sop-generator" style={{
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+          textDecoration: "none", color: "rgba(255,255,255,0.7)", padding: "6px 16px",
+          fontSize: 10, fontWeight: 600, letterSpacing: 0.3,
+        }}>
+          <span style={{ fontSize: 20 }}>🎙️</span>
+          New SOP
+        </a>
+        <a href={`/incident-report?asset=${id}&location=${encodeURIComponent(asset.location || "")}&equipment=${encodeURIComponent(asset.name || "")}`} style={{
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+          textDecoration: "none", color: "#fff", padding: "6px 16px",
+          fontSize: 10, fontWeight: 600, letterSpacing: 0.3,
+          background: C.danger, borderRadius: 10,
+        }}>
+          <span style={{ fontSize: 20 }}>⚠️</span>
+          Report Issue
+        </a>
+        <a href="/sunshine" style={{
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+          textDecoration: "none", color: C.gold, padding: "6px 16px",
+          fontSize: 10, fontWeight: 600, letterSpacing: 0.3,
+        }}>
+          <span style={{ fontSize: 20 }}>🏠</span>
+          RHONDA
+        </a>
       </div>
 
       <style>{`
