@@ -19,12 +19,18 @@ const VALID_TABLES = [
   "audit_packages",
 ];
 
+// Sanitize column names — only allow alphanumeric + underscore
+const SAFE_COLUMN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+// Cap limit to prevent unbounded dumps
+const MAX_LIMIT = 500;
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const table = searchParams.get("table");
   const status = searchParams.get("status");
   const dept = searchParams.get("department");
-  const limit = parseInt(searchParams.get("limit") || "100", 10);
+  const limit = Math.min(parseInt(searchParams.get("limit") || "100", 10), MAX_LIMIT);
   // Tables with non-standard timestamp columns
   const ORDER_DEFAULTS = {
     safety_streaks: "updated_at",
@@ -38,12 +44,18 @@ export async function GET(request) {
     return Response.json({ error: `Invalid table. Valid: ${VALID_TABLES.join(", ")}` }, { status: 400 });
   }
 
+  if (!SAFE_COLUMN.test(orderBy)) {
+    return Response.json({ error: "Invalid order column" }, { status: 400 });
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     return Response.json({ data: [], source: "demo" });
   }
 
-  let query = supabase.from(table).select("*");
+  // Strip sensitive fields from organizations table
+  const selectCols = table === "organizations" ? "id,slug,name,industry,created_at,updated_at" : "*";
+  let query = supabase.from(table).select(selectCols);
 
   // org scoping (skip for org table itself)
   if (table !== "organizations") {
@@ -66,7 +78,7 @@ export async function GET(request) {
   query = query.order(orderBy, { ascending: asc }).limit(limit);
 
   const { data, error } = await query;
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return Response.json({ error: "Query failed" }, { status: 500 });
   return Response.json({ data, source: "supabase" });
 }
 
@@ -83,10 +95,8 @@ export async function POST(request) {
     return Response.json({ data: { ...record, id: `demo-${Date.now()}` }, source: "demo" });
   }
 
-  // Auto-inject org_id for tables that need it
-  if (!record.org_id) {
-    record.org_id = ORG_ID;
-  }
+  // Force org_id to demo org — never trust client-provided org_id
+  record.org_id = ORG_ID;
 
   const { data, error } = await supabase
     .from(table)
@@ -94,6 +104,6 @@ export async function POST(request) {
     .select()
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return Response.json({ error: "Write failed" }, { status: 500 });
   return Response.json({ data, source: "supabase" });
 }

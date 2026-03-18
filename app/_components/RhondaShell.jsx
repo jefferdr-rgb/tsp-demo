@@ -123,6 +123,38 @@ const Icons = {
 };
 
 // ══════════════════════════════════════════════════
+// POWER TOOLS — standalone feature pages
+// ══════════════════════════════════════════════════
+const POWER_TOOLS = [
+  { category: "Safety", emoji: "🛡️", items: [
+    { label: "Safety Heat Map", href: "/safety-map", desc: "See where hazards cluster" },
+    { label: "Incident Report", href: "/incident-report", desc: "Voice-powered reporting" },
+    { label: "Shift Handoff", href: "/shift-handoff", desc: "Auto-generated briefings" },
+  ]},
+  { category: "Knowledge", emoji: "🧠", items: [
+    { label: "Ask the Veteran", href: "/ask-veteran", desc: "Decades of expertise on tap" },
+    { label: "Bounty Board", href: "/bounty-board", desc: "Get paid to document what you know" },
+    { label: "SOP Generator", href: "/sop-generator", desc: "Turn talk into procedures" },
+  ]},
+  { category: "Operations", emoji: "⚙️", items: [
+    { label: "Scorecard", href: "/scorecard", desc: "Personal ROI + safety streaks" },
+    { label: "ROI Dashboard", href: "/roi-ticker", desc: "Every dollar RHONDA saves" },
+    { label: "Predictive Maintenance", href: "/predictive-maintenance", desc: "Fix it before it breaks" },
+    { label: "Asset Manager", href: "/asset-manager", desc: "Track every machine" },
+  ]},
+  { category: "Quality", emoji: "✅", items: [
+    { label: "Compliance Scan", href: "/compliance-scan", desc: "Certs, inspections, training" },
+    { label: "Defect Inspector", href: "/defect-inspector", desc: "AI-powered visual QC" },
+    { label: "Audit Package", href: "/audit-package", desc: "One-click audit bundles" },
+  ]},
+  { category: "People", emoji: "👥", items: [
+    { label: "Onboard", href: "/onboard", desc: "New hire in 5 minutes" },
+    { label: "Voice Broadcast", href: "/voice-broadcast", desc: "Announcements to every phone" },
+    { label: "Equipment Whisperer", href: "/equipment-whisperer", desc: "Diagnose any machine" },
+  ]},
+];
+
+// ══════════════════════════════════════════════════
 // STEP SEQUENCES — maps task IDs to animated progress labels
 // ══════════════════════════════════════════════════
 const STEP_SEQUENCES = {
@@ -350,12 +382,55 @@ function extractEmailBody(text) {
 // FILE FORMAT SUPPORT
 // ══════════════════════════════════════════════════
 
+// Check if file is an image (including iPhone HEIC)
+function isImageFile(file) {
+  if (file.type && file.type.startsWith("image/")) return true;
+  const ext = file.name.split(".").pop().toLowerCase();
+  return ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif"].includes(ext);
+}
+
+// Convert image to base64 JPEG (resized for Claude vision, max 1568px)
+async function imageToBase64(file) {
+  return new Promise((resolve) => {
+    // For HEIC or any image, use canvas to convert to JPEG
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 1568;
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        const scale = maxDim / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      URL.revokeObjectURL(url);
+      resolve(dataUrl.split(",")[1]); // strip data:image/jpeg;base64, prefix
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
+
 async function parseFile(file) {
   const ext = file.name.split(".").pop().toLowerCase();
   const truncate = (text, max = Infinity) =>
     text.length > max
       ? text.slice(0, max) + `\n\n[Truncated — showing first ${max.toLocaleString()} of ${text.length.toLocaleString()} characters]`
       : text;
+
+  // Images are handled separately via vision — return a marker
+  if (isImageFile(file)) {
+    return `[IMAGE: ${file.name}]`;
+  }
 
   if (["txt", "md", "json", "csv", "html", "xml"].includes(ext)) {
     const text = await new Promise((res, rej) => {
@@ -493,6 +568,8 @@ export default function RhondaShell({ config = {} }) {
   const [sopGenerating, setSopGenerating] = useState(false);
   const [sopCopied, setSopCopied] = useState(false);
   const [complianceAlerts, setComplianceAlerts] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [imageData, setImageData] = useState(null); // base64 for vision/scan
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 60000);
@@ -600,8 +677,20 @@ export default function RhondaShell({ config = {} }) {
   const handleFileDrop = async (taskId, files) => {
     if (!files || !files.length) return;
     const file = files[0];
-    setActiveTask(taskId); setMessages([]); setError(""); setFileDoc(null); setParsing(true);
+    setActiveTask(taskId); setMessages([]); setError(""); setFileDoc(null); setImageData(null); setParsing(true);
     try {
+      // Handle image files — convert to base64 for vision
+      if (isImageFile(file)) {
+        const b64 = await imageToBase64(file);
+        if (b64) {
+          setImageData(b64);
+          setInput(`Digitize this photo: "${file.name}"`);
+          setParsing(false);
+          // Auto-switch to photo/scan task if not already there
+          if (taskId !== "photo") setActiveTask("photo");
+          return;
+        }
+      }
       const content = await parseFile(file);
       if (taskId === "leo") {
         setParsing(false);
@@ -640,6 +729,15 @@ export default function RhondaShell({ config = {} }) {
     if (!files || !files.length) return;
     const file = files[0];
     if (activeTask === "leo") { handleFileDrop("leo", [file]); return; }
+    // Handle image files in chat
+    if (isImageFile(file)) {
+      const b64 = await imageToBase64(file);
+      if (b64) {
+        setImageData(b64);
+        setInput(`Digitize this photo: "${file.name}"`);
+        return;
+      }
+    }
     setParsing(true);
     try {
       const content = await parseFile(file);
@@ -666,7 +764,14 @@ export default function RhondaShell({ config = {} }) {
 
     const docForApi = fileDoc;
     if (fileDoc) setFileDoc(null);
-    const userContent = (activeTask === "docs" && docForApi)
+    const imgForApi = imageData;
+    if (imageData) setImageData(null);
+    const userContent = imgForApi
+      ? [
+          { type: "image", source: { type: "base64", media_type: "image/jpeg", data: imgForApi } },
+          { type: "text", text: input },
+        ]
+      : (activeTask === "docs" && docForApi)
       ? [
           { type: "document", source: { type: "text", data: docForApi.content }, title: docForApi.name, citations: { enabled: true } },
           { type: "text", text: input },
@@ -734,7 +839,7 @@ export default function RhondaShell({ config = {} }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: isTeach ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001",
+          model: (isTeach || imgForApi) ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001",
           max_tokens: isTeach ? 400 : 700,
           system: systemPrompt,
           messages: isTeach ? [...messages.slice(-8).map(m => ({ role: m.role, content: m.content })), { role: "user", content: input }] : apiMessages,
@@ -804,8 +909,13 @@ export default function RhondaShell({ config = {} }) {
 
       <div style={{ display: "flex", minHeight: "100vh" }}>
 
+        {/* ══════ MOBILE SIDEBAR BACKDROP ══════ */}
+        {sidebarOpen && (
+          <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 98, display: "none" }} className="sidebar-backdrop" />
+        )}
+
         {/* ══════ SIDEBAR ══════ */}
-        <div style={{ width: 240, background: T.chrome, borderRight: `1px solid ${T.chromeBorder}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div className="rhonda-sidebar" style={{ width: 240, background: T.chrome, borderRight: `1px solid ${T.chromeBorder}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
           <div style={{ padding: "22px 18px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${T.brand}, #B8912E)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px rgba(212,168,67,0.2)` }}>
@@ -834,6 +944,22 @@ export default function RhondaShell({ config = {} }) {
                 </div>
               );
             })}
+            <div style={{ height: 1, background: T.chromeBorder, margin: "10px 6px" }} />
+            <div style={{ fontSize: 9, fontWeight: 700, color: T.brand, letterSpacing: "0.12em", textTransform: "uppercase", padding: "6px 10px", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>⚡</span> Power Tools
+            </div>
+            {POWER_TOOLS.map(cat => (
+              <div key={cat.category}>
+                <div style={{ fontSize: 9, fontWeight: 600, color: "#5a6a55", padding: "5px 10px 2px", letterSpacing: "0.06em" }}>{cat.emoji} {cat.category}</div>
+                {cat.items.map(item => (
+                  <a key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
+                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px 6px 18px", borderRadius: 8, cursor: "pointer", color: "#8a9b7a", textDecoration: "none", fontSize: 11.5, transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = T.gold; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#8a9b7a"; }}
+                  >{item.label}</a>
+                ))}
+              </div>
+            ))}
           </div>
           <div style={{ padding: "14px 18px", borderTop: `1px solid ${T.chromeBorder}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -848,6 +974,10 @@ export default function RhondaShell({ config = {} }) {
 
           {/* Top Bar */}
           <div style={{ height: 56, background: "#ffffff", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: 4, color: T.textMuted }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
             <div style={{ fontSize: 13, color: T.textMuted }}>
               {task ? (
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -856,6 +986,7 @@ export default function RhondaShell({ config = {} }) {
                   <span style={{ color: T.gold, fontWeight: 600 }}>{task.label}</span>
                 </span>
               ) : "Dashboard"}
+            </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div style={{ color: T.textDim, cursor: "pointer" }}>{Icons.search}</div>
@@ -964,6 +1095,34 @@ export default function RhondaShell({ config = {} }) {
                     <div key={i} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "18px 16px", textAlign: "center" }}>
                       <div style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
                       <div style={{ fontSize: 10, fontWeight: 600, color: T.textDim, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 6 }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ══════ POWER TOOLS (desktop only — mobile uses hamburger sidebar) ══════ */}
+                <div className="power-tools-grid" style={{ marginTop: 40 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                    <span style={{ fontSize: 20 }}>⚡</span>
+                    <h2 style={{ fontSize: 20, fontWeight: 800, color: T.beige, margin: 0 }}>Power Tools</h2>
+                  </div>
+                  <p style={{ fontSize: 13, color: T.textMuted, margin: "0 0 20px" }}>The tools that make you the one everyone calls.</p>
+                  {POWER_TOOLS.map((cat, ci) => (
+                    <div key={cat.category} style={{ marginBottom: 20, animation: `fadeIn 0.4s ease ${0.1 + ci * 0.08}s both` }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.textDim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>{cat.emoji}</span> {cat.category}
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+                        {cat.items.map((item, ii) => (
+                          <a key={item.href} href={item.href}
+                            style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "14px 16px", textDecoration: "none", cursor: "pointer", transition: "all 0.25s ease", animation: `fadeIn 0.3s ease ${0.15 + ci * 0.08 + ii * 0.04}s both` }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = T.gold; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = T.goldGlow12; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+                          >
+                            <div style={{ fontSize: 13, fontWeight: 700, color: T.beige, marginBottom: 3 }}>{item.label}</div>
+                            <div style={{ fontSize: 11, color: T.textMuted, lineHeight: 1.4 }}>{item.desc}</div>
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1215,17 +1374,39 @@ export default function RhondaShell({ config = {} }) {
                   </div>
 
                   {/* Input */}
-                  <div style={{ borderTop: `1px solid ${T.border}`, padding: "14px 18px", display: "flex", alignItems: "flex-end", gap: 10, background: T.bgAlt }}>
-                    <textarea value={input} onChange={e => setInput(e.target.value)}
-                      placeholder={messages.length === 0 ? task.placeholder.split("\n")[0] : "Type your follow-up, or drag a file here..."}
-                      rows={2}
-                      style={{ flex: 1, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, fontFamily: "'Outfit', sans-serif", color: T.text, resize: "none", outline: "none", lineHeight: 1.5 }}
-                      onFocus={e => e.target.style.borderColor = T.borderLight}
-                      onBlur={e => e.target.style.borderColor = T.border}
-                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-                    />
-                    <button onClick={handleSubmit} disabled={loading || parsing || !input.trim()}
-                      style={{ background: loading || parsing || !input.trim() ? T.surface : `linear-gradient(135deg, ${T.gold}, #B8912E)`, border: "none", borderRadius: 10, width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading || parsing || !input.trim() ? "default" : "pointer", color: loading || parsing || !input.trim() ? T.textDim : T.bg, flexShrink: 0 }}>{Icons.send}</button>
+                  <div style={{ borderTop: `1px solid ${T.border}`, padding: "14px 18px", background: T.bgAlt }}>
+                    {imageData && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, padding: "6px 10px", background: T.goldDim, borderRadius: 8, fontSize: 12, color: T.gold }}>
+                        {Icons.camera} <span>Photo ready to scan</span>
+                        <button onClick={() => setImageData(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: T.textDim, fontSize: 14 }}>✕</button>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
+                      <label style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: imageData ? T.gold : T.textDim, flexShrink: 0, transition: "all 0.2s" }}>
+                        {Icons.camera}
+                        <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={async e => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const b64 = await imageToBase64(file);
+                          if (b64) {
+                            setImageData(b64);
+                            if (!input.trim()) setInput(`Digitize this photo: "${file.name}"`);
+                            if (activeTask !== "photo") setActiveTask("photo");
+                          }
+                          e.target.value = "";
+                        }} />
+                      </label>
+                      <textarea value={input} onChange={e => setInput(e.target.value)}
+                        placeholder={messages.length === 0 ? task.placeholder.split("\n")[0] : "Type your follow-up, or drag a file here..."}
+                        rows={2}
+                        style={{ flex: 1, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, fontFamily: "'Outfit', sans-serif", color: T.text, resize: "none", outline: "none", lineHeight: 1.5 }}
+                        onFocus={e => e.target.style.borderColor = T.borderLight}
+                        onBlur={e => e.target.style.borderColor = T.border}
+                        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
+                      />
+                      <button onClick={handleSubmit} disabled={loading || parsing || (!input.trim() && !imageData)}
+                        style={{ background: loading || parsing || (!input.trim() && !imageData) ? T.surface : `linear-gradient(135deg, ${T.gold}, #B8912E)`, border: "none", borderRadius: 10, width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading || parsing || (!input.trim() && !imageData) ? "default" : "pointer", color: loading || parsing || (!input.trim() && !imageData) ? T.textDim : T.bg, flexShrink: 0 }}>{Icons.send}</button>
+                    </div>
                   </div>
                 </div>}
               </div>
@@ -1245,6 +1426,28 @@ export default function RhondaShell({ config = {} }) {
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: ${T.border}; border-radius: 3px; }
+        @media (max-width: 768px) {
+          .rhonda-sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            z-index: 99 !important;
+            transform: translateX(${sidebarOpen ? "0" : "-100%"}) !important;
+            transition: transform 0.25s ease !important;
+            box-shadow: ${sidebarOpen ? "4px 0 24px rgba(0,0,0,0.3)" : "none"} !important;
+            overflow-y: auto !important;
+          }
+          .sidebar-backdrop {
+            display: block !important;
+          }
+          .sidebar-toggle {
+            display: block !important;
+          }
+          .power-tools-grid {
+            display: none !important;
+          }
+        }
       `}</style>
     </div>
   );

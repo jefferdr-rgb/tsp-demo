@@ -127,7 +127,7 @@ export default function ShiftHandoffPage() {
   useEffect(() => {
     Promise.all([
       fetch("/api/data?table=shifts&order=start_time&asc=false&limit=10").then(r => r.json()),
-      fetch("/api/data?table=shift_handoffs&order=created_at&asc=false&limit=10").then(r => r.json()),
+      fetch("/api/data?table=shift_handoffs&order=generated_at&asc=false&limit=10").then(r => r.json()),
     ])
       .then(([shiftData, handoffData]) => {
         if (shiftData.source === "demo" || !shiftData.data?.length) return;
