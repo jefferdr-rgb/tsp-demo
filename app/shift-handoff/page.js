@@ -122,35 +122,9 @@ export default function ShiftHandoffPage() {
   const [expandedId, setExpandedId] = useState(SHIFTS[0].id);
   const [speaking, setSpeaking] = useState(false);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), 30000);
-    Promise.all([
-      fetch("/api/data?table=shifts&order=start_time&asc=false&limit=10", { signal: ctrl.signal }).then(r => { if (!r.ok) throw new Error(); return r.json(); }).catch(() => ({ source: "demo" })),
-      fetch("/api/data?table=shift_handoffs&order=generated_at&asc=false&limit=10", { signal: ctrl.signal }).then(r => { if (!r.ok) throw new Error(); return r.json(); }).catch(() => ({ source: "demo" })),
-    ])
-      .then(([shiftData, handoffData]) => {
-        if (shiftData.source === "demo" || !shiftData.data?.length) return;
-        const handoffs = handoffData.data || [];
-        const live = shiftData.data.map((s, i) => {
-          const handoff = handoffs.find(h => h.shift_id === s.id);
-          const sections = handoff?.sections || [];
-          return {
-            id: s.id || `shift-${i}`,
-            shift: s.shift_name || s.shift_type || "Shift",
-            date: new Date(s.start_time).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
-            time: `${new Date(s.start_time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} — ${new Date(s.end_time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
-            supervisor: s.supervisor_name || "Unknown", crew: s.crew_count || 0, status: s.status || "completed",
-            summary: handoff?.summary || s.notes || "No handoff summary available.",
-            sections: sections.length > 0 ? sections : [{ title: "Notes", icon: "\uD83D\uDCCB", items: [{ text: handoff?.summary || s.notes || "No details recorded.", status: "info" }] }],
-          };
-        });
-        setShifts(live);
-        if (live.length) setExpandedId(live[0].id);
-      })
-      .catch(() => {})
-      .finally(() => clearTimeout(timeout));
-  }, []);
+  // TODO: Re-enable Supabase fetch once shift seed data is updated for Kings Home
+  // Currently Supabase contains Sunshine Mills demo data which overrides the
+  // correct Kings Home hardcoded data above. Wire back up after seeding KH shifts.
 
   const speakHandoff = (shift) => {
     if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return; }

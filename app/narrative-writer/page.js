@@ -89,7 +89,7 @@ const STATUS_LABELS = {
 
 export default function NarrativeWriterPage() {
   const [narratives] = useState(DEMO_NARRATIVES);
-  const [selectedSection, setSelectedSection] = useState(null);
+  const [selectedSection, setSelectedSection] = useState("GOV");
   const [generating, setGenerating] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
