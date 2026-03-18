@@ -4,9 +4,16 @@
 export const config = {
   clientKey: "thompson-distribution",
   companyName: "Thompson Distribution",
-  accent: "#1B4D8F",          // deep blue — professional, multi-brand
-  accentSecondary: "#C4352A", // International Truck red accent
-  chrome: "#0D1B2A",          // dark navy sidebar/banner
+  accent: "#C9A84C",          // warm gold — premium, family enterprise
+  accentSecondary: "#8B7D3C", // muted gold for secondary
+  chrome: "#1A1A1A",          // near-black sidebar/banner
+  bg: "#2A2A2A",              // dark charcoal page background
+  bgAlt: "#252525",
+  surface: "#333333",         // dark card surfaces
+  surfaceHover: "#3A3A3A",
+  surfaceActive: "#404040",
+  border: "#444444",          // subtle borders on dark
+  borderLight: "#3D3D3D",
 
   systemPreamble: `You are RHONDA, the AI operations manager for Thompson Distribution — a family of companies owned by John Thompson. The group includes:
 - MTA Distributors: America's largest rental equipment distributor. Honda engines, 200+ product lines, 65,000+ parts SKUs. Warehouses in Nashville and Corona, CA.

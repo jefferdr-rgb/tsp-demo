@@ -19,24 +19,42 @@ function darken(hex, amount = 0.15) {
   return `#${Math.round(r*f).toString(16).padStart(2,"0")}${Math.round(g*f).toString(16).padStart(2,"0")}${Math.round(b*f).toString(16).padStart(2,"0")}`;
 }
 
+// WCAG relative luminance — picks white or black text for max contrast
+function luminance(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+function contrastText(bgHex) { return luminance(bgHex) > 0.4 ? "#1a1a1a" : "#f5f5f5"; }
+function contrastMuted(bgHex) { return luminance(bgHex) > 0.4 ? "#6b705c" : "rgba(255,255,255,0.55)"; }
+function contrastDim(bgHex) { return luminance(bgHex) > 0.4 ? "#8a9b7a" : "rgba(255,255,255,0.35)"; }
+
 function buildTheme(config = {}) {
   const accent = config.accent || "#c49b2a";
   const accentSecondary = config.accentSecondary || "#4a6540";
   const brand = "#c49b2a"; // TSP/RHONDA gold — always fixed
   const chrome = config.chrome || "#2c3528"; // sidebar/banner bg
   const chromeBorder = darken(chrome, -0.15);  // slightly lighter for borders
+  // Configurable backgrounds — defaults to warm beige
+  const bg = config.bg || "#f4f1ea";
+  const surface = config.surface || "#ffffff";
+  const border = config.border || "#d6d1c4";
+  const borderLight = config.borderLight || darken(border, -0.1);
 
   return {
     chrome,
     chromeBorder,
     chromeDark: darken(chrome, 0.2),
-    bg: "#f4f1ea",
-    bgAlt: "#edeae2",
-    surface: "#ffffff",
-    surfaceHover: "#faf8f3",
-    surfaceActive: "#f0ede5",
-    border: "#d6d1c4",
-    borderLight: "#c4bfb2",
+    bg,
+    bgAlt: config.bgAlt || darken(bg, -0.03),
+    surface,
+    surfaceHover: config.surfaceHover || darken(surface, -0.02),
+    surfaceActive: config.surfaceActive || darken(surface, 0.03),
+    border,
+    borderLight,
     // RHONDA brand — never changes
     brand,
     brandDim: rgba(brand, 0.1),
@@ -69,12 +87,16 @@ function buildTheme(config = {}) {
     chromeGlow25: `0 12px 36px ${rgba(chrome, 0.25)}`,
     red: "#C53030",
     redDim: "rgba(197, 48, 48, 0.08)",
-    beige: "#2c3528",
-    beigeMuted: "#5a6352",
-    beigeDim: "#8a9b7a",
-    text: "#2c3528",
-    textMuted: "#6b705c",
-    textDim: "#8a9b7a",
+    // Auto-contrast text — adapts to bg luminance
+    beige: contrastText(bg),
+    beigeMuted: contrastMuted(bg),
+    beigeDim: contrastDim(bg),
+    text: contrastText(bg),
+    textMuted: contrastMuted(bg),
+    textDim: contrastDim(bg),
+    // Surface-contrast text — for cards/modals on surface bg
+    textOnSurface: contrastText(surface),
+    textMutedOnSurface: contrastMuted(surface),
   };
 }
 

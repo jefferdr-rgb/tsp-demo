@@ -3,10 +3,10 @@ import { useState } from "react";
 import { useVoiceInput } from "../_lib/useVoiceInput";
 
 const C = {
-  bg: "#f4f1ea", surface: "#ffffff", chrome: "#0D1B2A", accent: "#1B4D8F",
-  accentLight: "rgba(27,77,143,0.12)", red: "#C4352A", green: "#22c55e",
-  orange: "#F59E0B", border: "#d6d1c4", borderLight: "#e8e3d9",
-  text: "#1a2332", textMuted: "#5a6678", gold: "#c49b2a",
+  bg: "#2A2A2A", surface: "#333333", chrome: "#1A1A1A", accent: "#C9A84C",
+  accentLight: "rgba(201,168,76,0.15)", red: "#E05555", green: "#4ADE80",
+  orange: "#FBBF24", border: "#444444", borderLight: "#3D3D3D",
+  text: "#f5f5f5", textMuted: "rgba(255,255,255,0.55)", gold: "#C9A84C",
 };
 
 // OEM brand colors
