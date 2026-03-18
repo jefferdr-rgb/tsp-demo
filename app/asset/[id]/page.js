@@ -232,10 +232,19 @@ export default function AssetPage() {
       {/* Header */}
       <div style={{ background: C.chrome, padding: "16px 20px", borderBottom: `3px solid ${C.gold}` }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <span style={{ fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>RHONDA Asset</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>|</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{asset.department || "General"}</span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <a href="/asset-manager" style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                ← Assets
+              </a>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>|</span>
+              <span style={{ fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>RHONDA Asset</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>|</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{asset.department || "General"}</span>
+            </div>
+            <a href="/sunshine" style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>
+              RHONDA Home
+            </a>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
