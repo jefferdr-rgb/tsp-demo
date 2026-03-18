@@ -101,6 +101,12 @@ OUTPUT FORMAT (use this exact markdown structure):
     }),
   });
 
-  const data = await response.json();
-  return Response.json(data, { status: response.status });
+  let data;
+  try { data = await response.json(); } catch {
+    return Response.json({ error: "Failed to parse API response" }, { status: 502 });
+  }
+  if (!response.ok) {
+    return Response.json({ error: data?.error?.message || "SOP generation failed" }, { status: response.status });
+  }
+  return Response.json(data);
 }

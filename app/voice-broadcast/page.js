@@ -22,6 +22,7 @@ export default function VoiceBroadcastPage() {
   const [translating, setTranslating] = useState(false);
   const [speaking, setSpeaking] = useState(null);
   const [mode, setMode] = useState("voice"); // voice | text
+  const [translateError, setTranslateError] = useState("");
   const synthRef = useRef(null);
 
   const sourceText = mode === "voice" ? voice.transcript : manualText;
@@ -30,9 +31,11 @@ export default function VoiceBroadcastPage() {
     if (!sourceText.trim()) return;
     setTranslating(true);
     setTranslations({});
+    setTranslateError("");
 
     const targets = ["es", "vi"];
     const results = { en: sourceText.trim() };
+    const failed = [];
 
     await Promise.all(targets.map(async (lang) => {
       try {
@@ -47,10 +50,17 @@ export default function VoiceBroadcastPage() {
         });
         const data = await res.json();
         if (data.translated) results[lang] = data.translated;
-      } catch {}
+        else failed.push(lang);
+      } catch {
+        failed.push(lang);
+      }
     }));
 
     setTranslations(results);
+    if (failed.length > 0) {
+      const names = failed.map(l => LANGUAGES.find(x => x.code === l)?.label || l).join(", ");
+      setTranslateError(`Translation failed for: ${names}. English broadcast is still available.`);
+    }
     setTranslating(false);
   };
 
@@ -181,7 +191,7 @@ export default function VoiceBroadcastPage() {
                 </div>
               )}
 
-              {voice.error && <div style={{ marginTop: 8, fontSize: 12, color: C.danger }}>{voice.error}</div>}
+              {(voice.error || translateError) && <div style={{ marginTop: 8, fontSize: 12, color: C.danger }}>{voice.error || translateError}</div>}
             </div>
           ) : (
             <div>

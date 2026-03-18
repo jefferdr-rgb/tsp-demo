@@ -52,7 +52,10 @@ Rules:
     const extractData = await extractRes.json();
     const raw = extractData.content?.[0]?.text?.trim();
     const text = raw?.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-    metrics = JSON.parse(text);
+    // Haiku sometimes wraps JSON in explanation text — extract the JSON object
+    const jsonMatch = text?.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON found in response");
+    metrics = JSON.parse(jsonMatch[0]);
   } catch {
     return Response.json({ error: "Failed to extract metrics from data" }, { status: 500 });
   }

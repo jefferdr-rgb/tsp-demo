@@ -123,9 +123,10 @@ const Icons = {
 };
 
 // ══════════════════════════════════════════════════
-// POWER TOOLS — standalone feature pages
+// POWER TOOLS — standalone feature pages (default set)
+// Clients can override via config.powerTools
 // ══════════════════════════════════════════════════
-const POWER_TOOLS = [
+const DEFAULT_POWER_TOOLS = [
   { category: "Safety", emoji: "🛡️", items: [
     { label: "Safety Heat Map", href: "/safety-map", desc: "See where hazards cluster" },
     { label: "Incident Report", href: "/incident-report", desc: "Voice-powered reporting" },
@@ -546,6 +547,7 @@ const HISTORY_LIMIT = 4;
 export default function RhondaShell({ config = {} }) {
   const T = buildTheme(config);
   const TASKS = getTasks(T, config);
+  const POWER_TOOLS = config.powerTools || DEFAULT_POWER_TOOLS;
   const MAX_MESSAGES = config.demo?.maxMessages ?? 5;
   const companyName = config.companyName || "Your Company";
   const clientKey = config.clientKey || "demo";
@@ -559,7 +561,12 @@ export default function RhondaShell({ config = {} }) {
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
   const [time, setTime] = useState(new Date());
-  const [totalMessages, setTotalMessages] = useState(0);
+  const [totalMessages, setTotalMessages] = useState(() => {
+    if (typeof window !== "undefined") {
+      return parseInt(localStorage.getItem("rhonda_demo_msgs") || "0", 10);
+    }
+    return 0;
+  });
   const [gated, setGated] = useState(false);
   const [dragOver, setDragOver] = useState(null);
   const [chatDragOver, setChatDragOver] = useState(false);
@@ -577,12 +584,21 @@ export default function RhondaShell({ config = {} }) {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("rhonda_demo_msgs", String(totalMessages));
+    }
+  }, [totalMessages]);
+
   // Fetch compliance alerts on mount
   useEffect(() => {
     fetch(`/api/compliance/alerts?client_key=${clientKey}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error("Failed to load alerts");
+        return r.json();
+      })
       .then(data => setComplianceAlerts(data))
-      .catch(() => {});
+      .catch(() => setComplianceAlerts({ alerts: [], error: true }));
   }, [clientKey]);
 
   const greeting = () => {
@@ -653,11 +669,15 @@ export default function RhondaShell({ config = {} }) {
       setSopOutput(data.content?.[0]?.text || "No output generated.");
     } catch (err) {
       setError(`SOP generation failed: ${err.message}`);
-    } finally {
+      setSopOutput("");
       cleanupSopSteps();
-      setSopStep("Done ✓");
-      setTimeout(() => { setSopStep(""); setSopGenerating(false); }, 400);
+      setSopStep("");
+      setSopGenerating(false);
+      return;
     }
+    cleanupSopSteps();
+    setSopStep("Done ✓");
+    setTimeout(() => { setSopStep(""); setSopGenerating(false); }, 400);
   };
 
   const copySOP = () => {
@@ -836,6 +856,8 @@ export default function RhondaShell({ config = {} }) {
       const basePrompt = isTeach ? BASE_TEACH_PROMPT : BASE_SYSTEM_PROMPT + (task?.systemExtra ? "\n\n" + task.systemExtra : "");
       const systemPrompt = preamble ? preamble + "\n\n" + basePrompt : basePrompt;
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
       const res = await fetch("/api/rhonda", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -846,9 +868,12 @@ export default function RhondaShell({ config = {} }) {
           messages: isTeach ? [...messages.slice(-8).map(m => ({ role: m.role, content: m.content })), { role: "user", content: input }] : apiMessages,
           ...sheetsTools,
         }),
+        signal: controller.signal,
       });
-      const data = await res.json();
-      if (data.error) { setError(data.error.message); }
+      clearTimeout(timeout);
+      let data;
+      try { data = await res.json(); } catch { throw new Error("Invalid response from server"); }
+      if (data.error) { setError(data.error.message || "API error"); }
       else {
         const textBlocks = (data.content || []).filter(b => b.type === "text");
         const text = textBlocks.map(b => b.text).join("\n").trim();
@@ -863,7 +888,10 @@ export default function RhondaShell({ config = {} }) {
         }]);
         if (totalMessages >= MAX_MESSAGES - 1) setTimeout(() => setGated(true), 2000);
       }
-    } catch { setError("Could not connect to RHONDA. Check your connection."); }
+    } catch (err) {
+      if (err.name === "AbortError") setError("Request timed out. Please try again.");
+      else setError(err.message || "Could not connect to RHONDA. Check your connection.");
+    }
     cleanupSteps();
     setAgentStep("Done ✓");
     setTimeout(() => { setAgentStep(""); setLoading(false); }, 400);

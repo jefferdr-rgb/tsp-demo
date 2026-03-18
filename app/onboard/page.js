@@ -66,8 +66,9 @@ export default function OnboardPage() {
   };
 
   const saveEmployee = async () => {
+    setError("");
     try {
-      await fetch("/api/compliance", {
+      const res = await fetch("/api/compliance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -82,9 +83,11 @@ export default function OnboardPage() {
           },
         }),
       });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Save failed");
       setSaved(true);
-    } catch {
-      setError("Failed to save. Try again.");
+    } catch (err) {
+      setError(err.message || "Failed to save. Try again.");
     }
   };
 
