@@ -36,10 +36,71 @@ const DEMO_ASSET = {
   isDemo: true,
 };
 
+// ── Setup Guide Data ──────────────────────────────────────────────────────
+const SETUP_GUIDE = {
+  printing: {
+    title: "QR Label Printing",
+    icon: "🏷️",
+    tips: [
+      { label: "Label Size", detail: "Use 2\" × 2\" minimum — workers scan from arm's length, not inches away" },
+      { label: "Label Material", detail: "Polyester labels (not paper) — waterproof, oil-resistant, won't peel in heat" },
+      { label: "Print Type", detail: "Thermal transfer printers (uses ribbon) last years. Thermal direct (no ribbon) fades in months with heat/sunlight" },
+      { label: "Human-Readable", detail: "Always include asset name + ID below the QR code — if the code gets scratched, workers can still type it in" },
+      { label: "Laminate", detail: "If using non-laminated labels, add overlaminate — one wipe with degreaser destroys unprotected ink" },
+      { label: "Placement", detail: "Eye level, operator side, away from heat sources and chemical splash zones" },
+    ],
+  },
+  printers: {
+    title: "Recommended Printers",
+    icon: "🖨️",
+    tiers: [
+      { name: "Getting Started", printer: "Brother QL-820NWB", price: "~$200", labels: "Avery 6576 polyester", best: "Under 50 assets, WiFi + Bluetooth printing" },
+      { name: "Industrial", printer: "Brady M211", price: "~$250", labels: "Brady B-593 polyester", best: "50-500 assets, built for maintenance teams" },
+      { name: "High Volume", printer: "Zebra ZD421", price: "~$400+", labels: "Custom polyester rolls", best: "500+ assets, thermal transfer workhorse" },
+    ],
+  },
+  hardware: {
+    title: "Hardware Your Team Needs",
+    icon: "📱",
+    categories: [
+      {
+        name: "Essential (Day 1)",
+        items: [
+          { device: "Smartphones or Tablets", why: "Every RHONDA feature works on mobile — camera, mic, QR scanning all built in", rec: "Workers' existing phones work. For shared stations: iPad 10th gen ($329) or Samsung Galaxy Tab A9+ ($219)" },
+          { device: "Ruggedized Cases", why: "Factory floors destroy unprotected devices", rec: "OtterBox Defender ($40-60) or Griffin Survivor ($30-50) — drop-proof, dust-proof" },
+          { device: "WiFi / Cellular Coverage", why: "RHONDA is cloud-based — needs internet for AI features", rec: "Ensure WiFi covers production floor. Offline mode works for basic access" },
+        ],
+      },
+      {
+        name: "QR & Asset Tracking",
+        items: [
+          { device: "Label Printer", why: "Print durable QR stickers for every machine, station, and area", rec: "See printer recommendations above — Brady M211 is the sweet spot for most plants" },
+          { device: "Durable Label Stock", why: "Paper labels won't survive grease, chemicals, or temperature swings", rec: "Brady B-593 polyester or Avery 6576 — rated for industrial environments" },
+        ],
+      },
+      {
+        name: "Communication & Safety",
+        items: [
+          { device: "Bluetooth Speaker / PA System", why: "Voice Broadcast feature announces in multiple languages across the floor", rec: "JBL Flip 6 ($100) for small areas. Existing PA system integration for full facility" },
+          { device: "Tablet Stands / Wall Mounts", why: "Shared RHONDA stations at key areas — shift handoff, incident reporting, SOP lookup", rec: "RAM Mounts Tab-Tite ($40-80) — locking, adjustable, theft-deterrent" },
+        ],
+      },
+      {
+        name: "Coming Soon — Predictive Maintenance",
+        items: [
+          { device: "IoT Sensor Kit", why: "Temperature, vibration, and pressure monitoring for AI-driven failure prediction", rec: "Details coming Q3 2026 — RHONDA will integrate with standard industrial IoT protocols" },
+        ],
+      },
+    ],
+  },
+};
+
 export default function AssetManager() {
   const [assets, setAssets] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [showQR, setShowQR] = useState(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const [guideTab, setGuideTab] = useState("printing");
   const [form, setForm] = useState({ name: "", location: "", type: "Equipment", department: "Production" });
   const printRef = useRef(null);
 
@@ -312,6 +373,125 @@ export default function AssetManager() {
             </div>
           </div>
         )}
+
+        {/* Setup & Hardware Guide */}
+        <div style={{ marginBottom: 24 }}>
+          <button onClick={() => setShowGuide(!showGuide)} style={{
+            width: "100%", padding: "14px 20px", background: C.surface, border: `1px solid ${C.border}`,
+            borderRadius: showGuide ? "12px 12px 0 0" : 12, fontSize: 14, fontWeight: 600, color: C.text,
+            cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center",
+            transition: "all 0.15s",
+          }}>
+            <span>Setup & Hardware Guide</span>
+            <span style={{ fontSize: 18, color: C.textMuted, transform: showGuide ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+          </button>
+
+          {showGuide && (
+            <div style={{
+              background: C.surface, borderRadius: "0 0 12px 12px", borderTop: "none",
+              border: `1px solid ${C.border}`, borderTopColor: C.borderLight,
+              overflow: "hidden",
+            }}>
+              {/* Guide Tabs */}
+              <div style={{ display: "flex", borderBottom: `1px solid ${C.borderLight}` }}>
+                {[
+                  { key: "printing", label: SETUP_GUIDE.printing.icon + " Printing Tips" },
+                  { key: "printers", label: SETUP_GUIDE.printers.icon + " Printers" },
+                  { key: "hardware", label: SETUP_GUIDE.hardware.icon + " Hardware" },
+                ].map(tab => (
+                  <button key={tab.key} onClick={() => setGuideTab(tab.key)} style={{
+                    flex: 1, padding: "10px 8px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                    background: guideTab === tab.key ? C.goldLight : "transparent",
+                    color: guideTab === tab.key ? C.gold : C.textMuted,
+                    borderBottom: guideTab === tab.key ? `2px solid ${C.gold}` : "2px solid transparent",
+                  }}>{tab.label}</button>
+                ))}
+              </div>
+
+              <div style={{ padding: "16px 20px" }}>
+                {/* Printing Tips Tab */}
+                {guideTab === "printing" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {SETUP_GUIDE.printing.tips.map((tip, i) => (
+                      <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <div style={{
+                          width: 24, height: 24, borderRadius: 12, background: C.goldLight,
+                          color: C.gold, fontSize: 12, fontWeight: 700,
+                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1,
+                        }}>{i + 1}</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{tip.label}</div>
+                          <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>{tip.detail}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Printers Tab */}
+                {guideTab === "printers" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {SETUP_GUIDE.printers.tiers.map((tier, i) => (
+                      <div key={i} style={{
+                        background: C.bg, borderRadius: 10, padding: "14px 16px",
+                        border: `1px solid ${C.borderLight}`,
+                        borderLeft: `4px solid ${i === 1 ? C.gold : C.border}`,
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{tier.name}</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: C.gold }}>{tier.price}</span>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C.chrome }}>{tier.printer}</div>
+                        <div style={{ fontSize: 12, color: C.textMuted, marginTop: 4 }}>Labels: {tier.labels}</div>
+                        <div style={{ fontSize: 12, color: C.textMuted }}>Best for: {tier.best}</div>
+                        {i === 1 && (
+                          <div style={{
+                            marginTop: 8, fontSize: 10, fontWeight: 700, color: C.gold,
+                            background: C.goldLight, display: "inline-block", padding: "2px 8px", borderRadius: 4,
+                            letterSpacing: 0.5,
+                          }}>RECOMMENDED</div>
+                        )}
+                      </div>
+                    ))}
+                    <div style={{ fontSize: 11, color: C.textMuted, fontStyle: "italic", marginTop: 4 }}>
+                      TSP can source and configure these printers as part of your RHONDA deployment.
+                    </div>
+                  </div>
+                )}
+
+                {/* Hardware Tab */}
+                {guideTab === "hardware" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {SETUP_GUIDE.hardware.categories.map((cat, i) => (
+                      <div key={i}>
+                        <div style={{
+                          fontSize: 12, fontWeight: 700, color: C.gold, textTransform: "uppercase",
+                          letterSpacing: 0.8, marginBottom: 8,
+                          borderBottom: `1px solid ${C.borderLight}`, paddingBottom: 4,
+                        }}>{cat.name}</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {cat.items.map((item, j) => (
+                            <div key={j} style={{
+                              background: C.bg, borderRadius: 8, padding: "12px 14px",
+                              border: `1px solid ${C.borderLight}`,
+                            }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 2 }}>{item.device}</div>
+                              <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.4, marginBottom: 4 }}>{item.why}</div>
+                              <div style={{ fontSize: 11, color: C.green, fontWeight: 600 }}>{item.rec}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ fontSize: 11, color: C.textMuted, fontStyle: "italic" }}>
+                      TSP provides complete hardware kits tailored to your facility size and environment.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Asset List */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
