@@ -25,7 +25,13 @@ export async function GET(request) {
   const status = searchParams.get("status");
   const dept = searchParams.get("department");
   const limit = parseInt(searchParams.get("limit") || "100", 10);
-  const orderBy = searchParams.get("order") || "created_at";
+  // Tables with non-standard timestamp columns
+  const ORDER_DEFAULTS = {
+    safety_streaks: "updated_at",
+    shift_handoffs: "generated_at",
+    organizations: "id",
+  };
+  const orderBy = searchParams.get("order") || ORDER_DEFAULTS[table] || "created_at";
   const asc = searchParams.get("asc") === "true";
 
   if (!table || !VALID_TABLES.includes(table)) {
