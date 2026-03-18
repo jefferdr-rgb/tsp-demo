@@ -137,6 +137,7 @@ const POWER_TOOLS = [
     { label: "SOP Generator", href: "/sop-generator", desc: "Turn talk into procedures" },
   ]},
   { category: "Operations", emoji: "⚙️", items: [
+    { label: "Batch Scanner", href: "/batch-scan", desc: "Feed a stack, RHONDA does the rest" },
     { label: "Scorecard", href: "/scorecard", desc: "Personal ROI + safety streaks" },
     { label: "ROI Dashboard", href: "/roi-ticker", desc: "Every dollar RHONDA saves" },
     { label: "Predictive Maintenance", href: "/predictive-maintenance", desc: "Fix it before it breaks" },
