@@ -6,7 +6,6 @@ export const metadata = {
     apple: "/icons/icon-192.svg",
   },
   manifest: "/manifest.json",
-  themeColor: "#c49b2a",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
