@@ -46,6 +46,38 @@ export async function POST(request) {
     body: JSON.stringify(safeBody),
   });
 
+  // Fallback to OpenRouter on Anthropic overload (529) or server error (5xx)
+  if (response.status >= 500 && process.env.OPENROUTER_API_KEY) {
+    const fallback = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "https://demo.treestandpartners.com",
+      },
+      body: JSON.stringify({
+        model: `anthropic/${safeBody.model}`,
+        max_tokens: safeBody.max_tokens,
+        messages: [
+          ...(safeBody.system ? [{ role: "system", content: safeBody.system }] : []),
+          ...safeBody.messages,
+        ],
+      }),
+    });
+    const fallbackData = await fallback.json();
+    // Normalize OpenRouter response to Anthropic format
+    const choice = fallbackData.choices?.[0];
+    if (choice) {
+      return Response.json({
+        content: [{ type: "text", text: choice.message?.content || "" }],
+        model: safeBody.model,
+        role: "assistant",
+        stop_reason: choice.finish_reason === "stop" ? "end_turn" : choice.finish_reason,
+      });
+    }
+    return Response.json(fallbackData, { status: fallback.status });
+  }
+
   const data = await response.json();
   return Response.json(data, { status: response.status });
 }
