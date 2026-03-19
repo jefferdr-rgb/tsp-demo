@@ -3,611 +3,817 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tree Stand Partners — Your AI Operations Team</title>
+<title>Tree Stand Partners | The Digital Architect</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:wght@300;400;600&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Manrope:wght@200..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 <style>
   :root {
-    --green: #2C3A2E;
-    --green-light: #3a4d3c;
-    --cream: #F5F0E8;
-    --cream-dark: #EDE6D6;
-    --gold: #C9972A;
-    --gold-light: #dba93a;
-    --white: #FFFFFF;
-    --ink: #1a1a1a;
-    --ink-soft: #3d3d3d;
+    --green: #061b0e;
+    --green-mid: #1b3022;
+    --green-light: #364c3c;
+    --cream: #fcf9f4;
+    --cream-mid: #f6f3ee;
+    --cream-dark: #ebe8e3;
+    --gold: #c49b2a;
+    --gold-dark: #775a00;
+    --white: #ffffff;
+    --ink: #1c1c19;
+    --ink-soft: #434843;
+    --outline: #737973;
+    --outline-light: #c3c8c1;
   }
 
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
     width: 100%;
     min-height: 100vh;
     background: var(--cream);
-    font-family: 'Source Serif 4', Georgia, serif;
+    font-family: 'Manrope', sans-serif;
     color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .page {
+  ::selection {
+    background: #fdcf5a;
+    color: #735700;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0;
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    min-height: 100vh;
+    z-index: 50;
+    background: rgba(252,249,244,0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.3s;
+  }
+
+  .nav-inner {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 48px;
+    max-width: 100%;
+  }
+
+  .nav-logo {
+    font-family: 'Newsreader', serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: -0.04em;
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 48px;
+  }
+
+  .nav-links a {
+    font-family: 'Newsreader', serif;
+    font-weight: 700;
+    color: var(--green);
+    opacity: 0.8;
+    text-decoration: none;
+    letter-spacing: -0.02em;
+    transition: opacity 0.3s;
+  }
+
+  .nav-links a:hover { opacity: 1; }
+
+  .nav-cta {
+    background: var(--green);
+    color: var(--white);
+    padding: 12px 32px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.3s;
+  }
+
+  .nav-cta:hover { background: var(--green-mid); }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 160px 48px 96px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 48px;
+    align-items: end;
+  }
+
+  .hero h1 {
+    font-family: 'Newsreader', serif;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    color: var(--green);
+  }
+
+  .hero-sub {
+    margin-top: 48px;
+    font-size: 20px;
+    color: var(--ink-soft);
+    max-width: 600px;
+    line-height: 1.6;
+  }
+
+  .hero-image {
+    width: 100%;
+    aspect-ratio: 4/5;
+    overflow: hidden;
+    background: var(--cream-mid);
+  }
+
+  .hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ── INDUSTRIES TICKER ── */
+  .industries {
+    padding: 24px 48px;
+    border-top: 1px solid var(--outline-light);
+    border-bottom: 1px solid var(--outline-light);
+    overflow: hidden;
+  }
+
+  .industries-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+
+  .industries-row {
+    display: flex;
+    gap: 64px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .industries-row::-webkit-scrollbar { display: none; }
+  .industries-row { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .industry-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .industry-item .material-symbols-outlined {
+    color: var(--gold);
+    opacity: 0.6;
+  }
+
+  .industry-item span:last-child {
+    font-family: 'Newsreader', serif;
+    font-size: 20px;
+    color: var(--green);
+  }
+
+  /* ── ARCHITECTURE GAP ── */
+  .arch-gap {
+    background: var(--green-mid);
+    padding: 128px 48px;
+    color: var(--white);
+  }
+
+  .arch-gap-grid {
+    display: grid;
+    grid-template-columns: 1fr 5fr 6fr;
+    gap: 48px;
+  }
+
+  .arch-gap-accent {
+    width: 3px;
+    height: 128px;
+    background: var(--gold);
+  }
+
+  .arch-gap h2 {
+    font-family: 'Newsreader', serif;
+    font-size: clamp(36px, 4vw, 56px);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .arch-gap-body p {
+    font-size: 20px;
+    line-height: 1.6;
+    opacity: 0.9;
+    margin-bottom: 24px;
+  }
+
+  .arch-gap-body p:last-of-type {
+    font-size: 17px;
+    opacity: 0.7;
+  }
+
+  .arch-gap-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 8px;
+    margin-top: 32px;
+    transition: opacity 0.3s;
+  }
+
+  .arch-gap-link:hover { opacity: 0.8; }
+
+  /* ── MODULES ── */
+  .modules {
+    padding: 128px 48px;
     background: var(--cream);
   }
 
-  /* ── HEADER ── */
-  .header {
+  .modules-header {
+    font-family: 'Newsreader', serif;
+    font-size: 36px;
+    letter-spacing: -0.02em;
+    color: var(--green);
+    margin-bottom: 96px;
+  }
+
+  .module-row {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: 48px;
+    align-items: center;
+    margin-bottom: 128px;
+  }
+
+  .module-row.reverse {
+    grid-template-columns: 7fr 5fr;
+  }
+
+  .module-box {
+    aspect-ratio: 1;
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .module-box.rhonda { background: var(--cream-dark); }
+  .module-box.leo { background: var(--green-mid); }
+  .module-box.vera { background: var(--gold); }
+
+  .module-number {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+  }
+
+  .module-box.rhonda .module-number { color: var(--ink-soft); }
+  .module-box.leo .module-number { color: rgba(255,255,255,0.5); }
+  .module-box.vera .module-number { color: rgba(255,255,255,0.8); }
+
+  .module-name {
+    font-family: 'Newsreader', serif;
+    font-size: clamp(48px, 5vw, 72px);
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .module-box.rhonda .module-name { color: var(--green); }
+  .module-box.leo .module-name,
+  .module-box.vera .module-name { color: var(--white); }
+
+  .module-bar {
+    width: 64px;
+    height: 3px;
+  }
+
+  .module-box.rhonda .module-bar,
+  .module-box.leo .module-bar { background: var(--gold); }
+  .module-box.vera .module-bar { background: var(--white); }
+
+  .module-content {
+    max-width: 520px;
+  }
+
+  .module-content.right {
+    text-align: right;
+    margin-left: auto;
+  }
+
+  .module-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold-dark);
+    margin-bottom: 24px;
+  }
+
+  .module-headline {
+    font-size: 24px;
+    color: var(--green);
+    line-height: 1.3;
+    margin-bottom: 24px;
+    font-weight: 600;
+  }
+
+  .module-desc {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+
+  .module-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .module-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .module-features .feat-arrow {
+    color: var(--gold);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .module-content.right .module-features li {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  /* ── TESTIMONIAL ── */
+  .testimonial {
     background: var(--green);
-    padding: 28px 48px 24px;
+    padding: 128px 48px;
+    color: var(--white);
     position: relative;
     overflow: hidden;
   }
 
-  .header::before {
-    content: '';
-    position: absolute;
-    top: -40px;
-    right: -40px;
-    width: 200px;
-    height: 200px;
-    border: 2px solid rgba(201,151,42,0.15);
-    border-radius: 50%;
-  }
-
-  .header::after {
-    content: '';
-    position: absolute;
-    top: -20px;
-    right: -20px;
-    width: 140px;
-    height: 140px;
-    border: 1px solid rgba(201,151,42,0.1);
-    border-radius: 50%;
-  }
-
-  .header-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .logo-lockup {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .logo-icon {
-    width: 48px;
-    height: 48px;
-    background: var(--gold);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .logo-icon svg {
-    width: 28px;
-    height: 28px;
-  }
-
-  .logo-text {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .logo-name {
-    font-family: 'Oswald', sans-serif;
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    color: var(--white);
-    text-transform: uppercase;
-    line-height: 1;
-  }
-
-  .logo-tagline {
-    font-family: 'Source Serif 4', serif;
-    font-size: 9px;
-    color: var(--gold);
-    letter-spacing: 0.06em;
-    margin-top: 3px;
-    font-style: italic;
-    font-weight: 300;
-  }
-
-  .header-headline {
-    text-align: right;
-    max-width: 55%;
-  }
-
-  .header-intro {
-    font-family: 'Oswald', sans-serif;
-    font-size: 8px;
-    letter-spacing: 0.2em;
-    color: var(--gold);
-    text-transform: uppercase;
-    font-weight: 500;
-    margin-bottom: 4px;
-  }
-
-  .header-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    font-weight: 900;
-    color: var(--white);
-    line-height: 1.1;
-    margin-bottom: 4px;
-  }
-
-  .header-title span {
-    color: var(--gold);
-  }
-
-  .header-sub {
-    font-family: 'Source Serif 4', serif;
-    font-size: 10.5px;
-    color: rgba(255,255,255,0.65);
-    font-weight: 300;
-    font-style: italic;
-    letter-spacing: 0.02em;
-  }
-
-  /* ── GOLD RULE ── */
-  .gold-rule {
-    height: 3px;
-    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
-  }
-
-  /* ── PROBLEM SECTION ── */
-  .problem {
-    background: var(--cream);
-    padding: 22px 48px 18px;
-    border-bottom: 1px solid var(--cream-dark);
-  }
-
-  .problem-text {
-    font-size: 11px;
-    line-height: 1.7;
-    color: var(--ink-soft);
-    text-align: center;
-    max-width: 6.5in;
+  .testimonial-inner {
+    max-width: 1100px;
     margin: 0 auto;
-  }
-
-  .problem-text strong {
-    color: var(--green);
-    font-weight: 600;
-  }
-
-  .problem-text em {
-    color: var(--gold);
-    font-style: normal;
-    font-weight: 600;
-  }
-
-  /* ── PRODUCTS ROW ── */
-  .products {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    flex: 1;
-  }
-
-  .product-col {
-    padding: 22px 28px 20px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .product-col.dark {
-    background: var(--green);
-  }
-
-  .product-col.light {
-    background: var(--cream);
-  }
-
-  .product-col.mid {
-    background: var(--cream-dark);
-  }
-
-  .product-col.light + .product-col.mid,
-  .product-col.mid + .product-col.dark {
-    border-left: none;
-  }
-
-  .product-eyebrow {
-    font-family: 'Oswald', sans-serif;
-    font-size: 7px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    font-weight: 500;
-    margin-bottom: 4px;
-    color: var(--gold);
-  }
-
-  .product-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    font-weight: 900;
-    line-height: 1;
-    margin-bottom: 2px;
-    letter-spacing: -0.01em;
-  }
-
-  .light .product-name { color: var(--green); }
-  .mid .product-name { color: var(--green); }
-  .dark .product-name { color: var(--white); }
-
-  .product-tagline {
-    font-family: 'Source Serif 4', serif;
-    font-size: 10px;
-    font-style: italic;
-    font-weight: 400;
-    letter-spacing: 0.03em;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-  }
-
-  .light .product-tagline {
-    color: var(--ink-soft);
-    border-bottom: 1px solid var(--cream-dark);
-  }
-
-  .mid .product-tagline {
-    color: var(--ink-soft);
-    border-bottom: 1px solid rgba(0,0,0,0.08);
-  }
-
-  .dark .product-tagline {
-    color: rgba(255,255,255,0.6);
-    border-bottom: 1px solid rgba(255,255,255,0.12);
-  }
-
-  .product-desc {
-    font-size: 9.5px;
-    line-height: 1.6;
-    margin-bottom: 10px;
-    font-weight: 400;
-  }
-
-  .light .product-desc { color: var(--ink-soft); }
-  .mid .product-desc { color: var(--ink-soft); }
-  .dark .product-desc { color: rgba(255,255,255,0.8); }
-
-  .features {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .features li {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    font-size: 9px;
-    line-height: 1.4;
-    font-weight: 400;
-  }
-
-  .light .features li { color: var(--ink-soft); }
-  .mid .features li { color: var(--ink-soft); }
-  .dark .features li { color: rgba(255,255,255,0.8); }
-
-  .feat-arrow {
-    font-size: 8px;
-    margin-top: 1px;
-    flex-shrink: 0;
-    font-weight: 600;
-    color: var(--gold);
-  }
-
-  /* ── RESULTS BAR ── */
-  .results {
-    background: var(--green);
-    padding: 18px 48px;
     position: relative;
   }
 
-  .results::before {
-    content: '';
+  .quote-mark {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  }
-
-  .results-header {
-    text-align: center;
-    margin-bottom: 10px;
-  }
-
-  .results-eyebrow {
-    font-family: 'Oswald', sans-serif;
-    font-size: 7px;
-    letter-spacing: 0.25em;
+    top: -80px;
+    left: -48px;
+    font-family: 'Newsreader', serif;
+    font-size: 320px;
     color: var(--gold);
-    text-transform: uppercase;
-    font-weight: 500;
-    margin-bottom: 3px;
-  }
-
-  .results-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--white);
-  }
-
-  .results-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .result-card {
-    border: 1px solid rgba(201,151,42,0.3);
-    border-radius: 4px;
-    padding: 10px 12px;
-    background: rgba(255,255,255,0.04);
-    text-align: center;
-  }
-
-  .result-number {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    font-weight: 900;
-    color: var(--gold);
+    opacity: 0.15;
     line-height: 1;
-    margin-bottom: 3px;
+    pointer-events: none;
+    user-select: none;
   }
 
-  .result-label {
-    font-size: 8px;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.3;
-    font-weight: 400;
-  }
-
-  .results-note {
-    text-align: center;
-    font-family: 'Source Serif 4', serif;
-    font-size: 9.5px;
-    color: rgba(255,255,255,0.55);
+  .testimonial blockquote {
+    font-family: 'Newsreader', serif;
     font-style: italic;
-    letter-spacing: 0.02em;
+    font-size: clamp(28px, 4.5vw, 56px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: rgba(255,255,255,0.9);
+    position: relative;
+    z-index: 1;
   }
 
-  .results-note strong {
+  .testimonial-attr {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .testimonial-attr .line {
+    width: 48px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .testimonial-attr span {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
     color: var(--gold);
-    font-style: normal;
-    font-weight: 600;
   }
 
-  /* ── HOW IT WORKS ── */
-  .how-it-works {
-    background: var(--cream);
-    padding: 16px 48px;
-    border-top: 1px solid var(--cream-dark);
+  /* ── STATS ── */
+  .stats {
+    background: var(--cream-dark);
+    padding: 128px 48px;
   }
 
-  .how-header {
-    text-align: center;
+  .stats-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 48px;
+  }
+
+  .stat-card {
+    padding: 32px;
+    border-left: 1px solid var(--outline-light);
+  }
+
+  .stat-number {
+    font-family: 'Newsreader', serif;
+    font-size: 48px;
+    color: var(--green);
     margin-bottom: 8px;
   }
 
-  .how-eyebrow {
-    font-family: 'Oswald', sans-serif;
-    font-size: 7px;
-    letter-spacing: 0.25em;
-    color: var(--gold);
-    text-transform: uppercase;
-    font-weight: 500;
-    margin-bottom: 2px;
-  }
-
-  .how-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 14px;
+  .stat-label {
+    font-size: 10px;
     font-weight: 700;
-    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold-dark);
+    margin-bottom: 16px;
   }
 
-  .how-steps {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
+  .stat-desc {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.6;
   }
 
-  .how-step {
+  /* ── PROBLEM SECTION ── */
+  .problem-section {
+    padding: 96px 48px;
+    background: var(--cream);
+    border-top: 1px solid var(--outline-light);
+  }
+
+  .problem-inner {
+    max-width: 800px;
+    margin: 0 auto;
     text-align: center;
   }
 
+  .problem-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--gold-dark);
+    margin-bottom: 24px;
+  }
+
+  .problem-text {
+    font-family: 'Newsreader', serif;
+    font-size: 22px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+  }
+
+  .problem-text strong { color: var(--green); font-weight: 700; }
+  .problem-text em { color: var(--gold-dark); font-style: normal; font-weight: 700; }
+
+  /* ── HOW IT WORKS ── */
+  .timeline {
+    background: var(--cream-mid);
+    padding: 96px 48px;
+    border-top: 1px solid var(--outline-light);
+  }
+
+  .timeline-header {
+    text-align: center;
+    margin-bottom: 64px;
+  }
+
+  .timeline-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--gold-dark);
+    margin-bottom: 12px;
+  }
+
+  .timeline-title {
+    font-family: 'Newsreader', serif;
+    font-size: 28px;
+    color: var(--green);
+    letter-spacing: -0.02em;
+  }
+
+  .timeline-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .timeline-step { text-align: center; }
+
   .step-week {
-    font-family: 'Oswald', sans-serif;
-    font-size: 9px;
-    font-weight: 600;
-    color: var(--gold);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold-dark);
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    margin-bottom: 3px;
+    margin-bottom: 12px;
   }
 
   .step-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 12px;
+    font-family: 'Newsreader', serif;
+    font-size: 20px;
     font-weight: 700;
     color: var(--green);
-    margin-bottom: 3px;
-    line-height: 1.2;
+    margin-bottom: 12px;
   }
 
   .step-desc {
-    font-size: 8.5px;
+    font-size: 14px;
     color: var(--ink-soft);
-    line-height: 1.5;
-    font-weight: 400;
+    line-height: 1.7;
   }
 
-  .step-arrow {
-    display: none;
+  /* ── SPLIT CTA ── */
+  .split-cta {
+    display: flex;
+    min-height: 700px;
   }
+
+  .split-left {
+    width: 50%;
+    background: var(--green);
+    padding: 96px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .split-left h2 {
+    font-family: 'Newsreader', serif;
+    font-size: clamp(36px, 4vw, 56px);
+    color: var(--white);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 32px;
+  }
+
+  .split-left .bar {
+    width: 64px;
+    height: 3px;
+    background: var(--gold);
+    margin-bottom: 32px;
+  }
+
+  .split-left p {
+    color: rgba(255,255,255,0.6);
+    font-size: 18px;
+    line-height: 1.6;
+    max-width: 420px;
+  }
+
+  .split-right {
+    width: 50%;
+    background: var(--cream);
+    padding: 96px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .form-label-top {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold-dark);
+    margin-bottom: 48px;
+  }
+
+  .form-group {
+    border-bottom: 1px solid var(--outline);
+    margin-bottom: 32px;
+    transition: border-color 0.3s;
+  }
+
+  .form-group:focus-within { border-color: var(--gold); }
+
+  .form-group label {
+    display: block;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 0 0 12px 0;
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    color: var(--green);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .form-group input::placeholder { color: rgba(28,28,25,0.2); }
+
+  .form-submit {
+    width: 100%;
+    background: var(--green);
+    color: var(--white);
+    padding: 20px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    border: none;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: background 0.5s;
+  }
+
+  .form-submit:hover { background: var(--gold-dark); }
 
   /* ── FOOTER ── */
-  .footer {
-    background: var(--cream-dark);
-    padding: 14px 48px;
+  footer {
+    background: var(--green);
+    padding: 64px 48px;
+    color: var(--cream);
+  }
+
+  .footer-inner {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    border-top: 2px solid var(--gold);
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 48px;
   }
 
-  .footer-cta {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .footer-ready {
-    font-family: 'Playfair Display', serif;
-    font-size: 14px;
+  .footer-brand {
+    font-family: 'Newsreader', serif;
+    font-size: 18px;
     font-weight: 700;
-    color: var(--green);
-  }
-
-  .footer-ready em {
     color: var(--gold);
-    font-style: normal;
-  }
-
-  .footer-tagline {
-    font-size: 8px;
-    color: var(--ink-soft);
-    font-style: italic;
-    font-weight: 300;
-  }
-
-  .footer-contact {
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .footer-name {
-    font-family: 'Oswald', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: var(--green);
     text-transform: uppercase;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
   }
 
-  .footer-details {
-    font-size: 8.5px;
-    color: var(--ink-soft);
-    line-height: 1.5;
+  .footer-sub {
+    font-size: 12px;
+    opacity: 0.4;
   }
 
-  .footer-details a {
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 48px;
+  }
+
+  .footer-links a {
+    color: rgba(252,249,244,0.6);
+    text-decoration: none;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: color 0.3s;
+  }
+
+  .footer-links a:hover { color: var(--gold); }
+
+  .footer-copy {
+    font-size: 10px;
+    opacity: 0.4;
+  }
+
+  .footer-contact-info {
+    font-size: 13px;
+    color: rgba(252,249,244,0.6);
+    line-height: 1.8;
+  }
+
+  .footer-contact-info a {
     color: var(--gold);
     text-decoration: none;
-    font-weight: 600;
   }
 
   /* ── MOBILE ── */
   @media (max-width: 768px) {
-    .header-inner {
-      flex-direction: column;
-      gap: 16px;
-      text-align: center;
-    }
+    .nav-inner { padding: 16px 24px; }
+    .nav-links { display: none; }
 
-    .header-headline {
-      text-align: center;
-      max-width: 100%;
-    }
-
-    .header {
-      padding: 24px 24px 20px;
-    }
-
-    .products {
+    .hero {
       grid-template-columns: 1fr;
+      padding: 120px 24px 48px;
     }
 
-    .results-grid {
-      grid-template-columns: 1fr 1fr;
+    .hero-image { max-width: 280px; }
+
+    .industries { padding: 16px 24px; }
+
+    .arch-gap {
+      padding: 64px 24px;
     }
 
-    .how-steps {
+    .arch-gap-grid {
       grid-template-columns: 1fr;
-      gap: 20px;
+      gap: 24px;
     }
 
-    .problem, .results, .how-it-works {
-      padding-left: 24px;
-      padding-right: 24px;
+    .arch-gap-accent { height: 64px; }
+
+    .modules { padding: 64px 24px; }
+    .modules-header { margin-bottom: 48px; }
+
+    .module-row,
+    .module-row.reverse {
+      grid-template-columns: 1fr;
+      margin-bottom: 64px;
     }
 
-    .footer {
-      flex-direction: column;
-      gap: 12px;
-      text-align: center;
-      padding: 20px 24px;
+    .module-content.right {
+      text-align: left;
+      margin-left: 0;
     }
 
-    .footer-contact {
-      text-align: center;
+    .module-content.right .module-features li {
+      justify-content: flex-start;
+      text-align: left;
     }
 
-    .product-name {
-      font-size: 32px;
-    }
+    .testimonial { padding: 64px 24px; }
 
-    .header-title {
-      font-size: 20px;
-    }
+    .stats { padding: 64px 24px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+
+    .problem-section { padding: 48px 24px; }
+    .timeline { padding: 48px 24px; }
+    .timeline-steps { grid-template-columns: 1fr; gap: 32px; }
+
+    .split-cta { flex-direction: column; }
+    .split-left, .split-right { width: 100%; padding: 48px 24px; }
+
+    footer { padding: 32px 24px; }
+    .footer-inner { flex-direction: column; text-align: center; }
+    .footer-links { justify-content: center; gap: 24px; }
   }
 
   /* ── PRINT ── */
   @media print {
-    @page {
-      size: letter;
-      margin: 0;
-    }
-
-    html, body {
-      width: 8.5in;
-      height: 11in;
-    }
-
-    .page {
-      width: 8.5in;
-      height: 11in;
-      max-width: 8.5in;
-      page-break-after: avoid;
-    }
-
+    @page { size: letter; margin: 0; }
+    html, body { width: 8.5in; height: 11in; }
+    nav { display: none; }
+    .hero { padding-top: 48px; }
     * {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
@@ -617,34 +823,62 @@
 </style>
 </head>
 <body>
-<div class="page">
 
-  <!-- HEADER -->
-  <header class="header">
-    <div class="header-inner">
-      <div class="logo-lockup">
-        <div class="logo-icon">
-          <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M14 3 L20 11 H16.5 L21 18 H15.5 V25 H12.5 V18 H7 L11.5 11 H8 Z" fill="#2C3A2E"/>
-          </svg>
-        </div>
-        <div class="logo-text">
-          <div class="logo-name">Tree Stand Partners</div>
-          <div class="logo-tagline">See Farther From 20 Feet Up</div>
-        </div>
-      </div>
-      <div class="header-headline">
-        <div class="header-intro">Your Dedicated AI Architect</div>
-        <div class="header-title">Your Operations <span>Run Themselves.</span><br>Your Data <span>Talks to You.</span></div>
-        <div class="header-sub">Less than one employee. More than an entire department.</div>
-      </div>
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="https://www.treestandpartners.com" class="nav-logo">TSP</a>
+    <div class="nav-links">
+      <a href="#modules">Products</a>
+      <a href="#how">How It Works</a>
+      <a href="#contact">Contact</a>
     </div>
-  </header>
+    <a href="#contact" class="nav-cta">Book a Consultation</a>
+  </div>
+</nav>
 
-  <div class="gold-rule"></div>
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <h1>Your Operations Run Themselves. Your Data Talks to You.</h1>
+    <p class="hero-sub">AI-powered business intelligence for the mid-market. We don't sell software subscriptions. We build the architecture for your future.</p>
+  </div>
+  <div class="hero-image">
+    <img src="/images/circuit-tree-logo.jpg" alt="Tree Stand Partners — circuit tree logo">
+  </div>
+</section>
 
-  <!-- PROBLEM FRAMING -->
-  <div class="problem">
+<!-- INDUSTRIES -->
+<section class="industries">
+  <div class="industries-label">Industries We Serve</div>
+  <div class="industries-row">
+    <div class="industry-item">
+      <span class="material-symbols-outlined">factory</span>
+      <span>Manufacturing</span>
+    </div>
+    <div class="industry-item">
+      <span class="material-symbols-outlined">local_shipping</span>
+      <span>Distribution</span>
+    </div>
+    <div class="industry-item">
+      <span class="material-symbols-outlined">account_balance</span>
+      <span>Financial Services</span>
+    </div>
+    <div class="industry-item">
+      <span class="material-symbols-outlined">medical_services</span>
+      <span>Healthcare</span>
+    </div>
+    <div class="industry-item">
+      <span class="material-symbols-outlined">work</span>
+      <span>Professional Services</span>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM FRAMING -->
+<section class="problem-section">
+  <div class="problem-inner">
+    <div class="problem-eyebrow">Sound Familiar?</div>
     <p class="problem-text">
       <strong>You've already tried AI.</strong> You asked ChatGPT a few questions. Maybe you bought a tool.
       It didn't stick — because nobody connected it to your actual business. Your invoices are still in a drawer.
@@ -652,130 +886,219 @@
       <em>That's not a technology problem. That's an architect problem.</em>
     </p>
   </div>
+</section>
 
-  <!-- THREE PRODUCTS -->
-  <div class="products">
+<!-- THE ARCHITECTURE GAP -->
+<section class="arch-gap">
+  <div class="arch-gap-grid">
+    <div><div class="arch-gap-accent"></div></div>
+    <div>
+      <h2>The Architecture Gap.</h2>
+    </div>
+    <div class="arch-gap-body">
+      <p>Most AI pilots fail not because of the technology, but because of the foundation. They are digital band-aids on fractured processes.</p>
+      <p>Tree Stand Partners operates differently. We are advisors first, architects second, and implementers third. We bridge the gap between legacy operations and autonomous intelligence by rebuilding your business architecture from the ground up.</p>
+    </div>
+  </div>
+</section>
 
-    <!-- RHONDA -->
-    <div class="product-col light">
-      <div class="product-eyebrow">For Your Team</div>
-      <div class="product-name">Rhonda</div>
-      <div class="product-tagline">She does the work nobody wants to do</div>
-      <p class="product-desc">
-        That stack of receipts that takes all Tuesday? Ninety seconds. The contract nobody read? Summarized in plain English. The new hire with no training manual? RHONDA already wrote one. Your people stop doing assistant work and start doing the work you hired them for.
-      </p>
-      <ul class="features">
-        <li><span class="feat-arrow">▸</span> Feed a scanner, get structured data — receipts, invoices, SOPs, all of it</li>
+<!-- MODULES -->
+<section class="modules" id="modules">
+  <h3 class="modules-header">Core Intelligence Modules</h3>
+
+  <!-- RHONDA -->
+  <div class="module-row">
+    <div>
+      <div class="module-box rhonda">
+        <span class="module-number">Module 01</span>
+        <div class="module-name">RHONDA</div>
+        <div class="module-bar"></div>
+      </div>
+    </div>
+    <div class="module-content">
+      <div class="module-eyebrow">The AI Office Manager</div>
+      <div class="module-headline">She does the work nobody wants to do — then does it better.</div>
+      <p class="module-desc">That stack of receipts that takes all Tuesday? Ninety seconds. The contract nobody read? Summarized in plain English. The new hire with no training manual? RHONDA already wrote one.</p>
+      <ul class="module-features">
+        <li><span class="feat-arrow">▸</span> Feed a scanner, get structured data — receipts, invoices, SOPs</li>
         <li><span class="feat-arrow">▸</span> Drafts emails that sound like your company, not a robot</li>
-        <li><span class="feat-arrow">▸</span> QR codes on equipment — scan it, get the procedure, report the problem</li>
-        <li><span class="feat-arrow">▸</span> 28+ tools custom-built for how your operation actually runs</li>
+        <li><span class="feat-arrow">▸</span> QR codes on equipment — scan it, get the procedure</li>
+        <li><span class="feat-arrow">▸</span> 28+ tools custom-built for how your operation runs</li>
         <li><span class="feat-arrow">▸</span> Works on any phone. No app. No login. No training.</li>
       </ul>
     </div>
+  </div>
 
-    <!-- LEO -->
-    <div class="product-col mid">
-      <div class="product-eyebrow">For the CEO</div>
-      <div class="product-name">Leo</div>
-      <div class="product-tagline">The morning briefing you never had time to build</div>
-      <p class="product-desc">
-        LEO reads everything — your QuickBooks, your Google Sheets, your scanned documents, your team's activity — and tells you what actually matters. Not a dashboard you have to check. A briefing that comes to you. Revenue trends, compliance gaps, cash flow patterns nobody connected before.
-      </p>
-      <ul class="features">
+  <!-- LEO -->
+  <div class="module-row reverse">
+    <div class="module-content right">
+      <div class="module-eyebrow">The AI Executive Advisor</div>
+      <div class="module-headline">The morning briefing you never had time to build.</div>
+      <p class="module-desc">LEO reads everything — QuickBooks, Google Sheets, scanned documents, your team's activity — and tells you what actually matters. Not a dashboard you check. A briefing that comes to you.</p>
+      <ul class="module-features">
         <li><span class="feat-arrow">▸</span> 48 hours from data chaos to a live executive dashboard</li>
         <li><span class="feat-arrow">▸</span> Every decision archived — institutional memory that compounds</li>
-        <li><span class="feat-arrow">▸</span> Confidence scores on every number — you see what's real vs. estimated</li>
+        <li><span class="feat-arrow">▸</span> Confidence scores on every number</li>
         <li><span class="feat-arrow">▸</span> Tracks every deal, every relationship, every commitment</li>
         <li><span class="feat-arrow">▸</span> Gets smarter every week as more data flows through</li>
       </ul>
     </div>
+    <div>
+      <div class="module-box leo">
+        <span class="module-number">Module 02</span>
+        <div class="module-name">LEO</div>
+        <div class="module-bar"></div>
+      </div>
+    </div>
+  </div>
 
-    <!-- VERA -->
-    <div class="product-col dark">
-      <div class="product-eyebrow">For You, Personally</div>
-      <div class="product-name">Vera</div>
-      <div class="product-tagline">The EA who never drops a thread</div>
-      <p class="product-desc">
-        You told someone in a meeting three weeks ago you'd follow up. You forgot. VERA didn't. She texts you reminders, tracks every commitment you made, and checks in weekly on the numbers only you can provide. She learns how you work — and makes sure nothing slips.
-      </p>
-      <ul class="features">
+  <!-- VERA -->
+  <div class="module-row">
+    <div>
+      <div class="module-box vera">
+        <span class="module-number">Module 03</span>
+        <div class="module-name">VERA</div>
+        <div class="module-bar"></div>
+      </div>
+    </div>
+    <div class="module-content">
+      <div class="module-eyebrow">The AI Executive Assistant</div>
+      <div class="module-headline">The EA who never drops a thread.</div>
+      <p class="module-desc">You told someone in a meeting three weeks ago you'd follow up. You forgot. VERA didn't. She texts you reminders, tracks every commitment you made, and checks in weekly on the numbers only you can provide.</p>
+      <ul class="module-features">
         <li><span class="feat-arrow">▸</span> Runs on text — no app, no portal, works on whatever phone you carry</li>
         <li><span class="feat-arrow">▸</span> Captures every promise, follows up until it's done</li>
         <li><span class="feat-arrow">▸</span> Morning texts: what's ahead, what needs you, what's overdue</li>
-        <li><span class="feat-arrow">▸</span> Fills the gaps LEO can't pull automatically — with a weekly check-in</li>
+        <li><span class="feat-arrow">▸</span> Fills the gaps LEO can't pull automatically</li>
         <li><span class="feat-arrow">▸</span> Never forgets what you said last quarter. Or last year.</li>
       </ul>
     </div>
-
   </div>
+</section>
 
-  <!-- RESULTS -->
-  <div class="results">
-    <div class="results-header">
-      <div class="results-eyebrow">Why This Is Different</div>
-      <div class="results-title">You Tried AI. Here's Why It Didn't Work.</div>
-    </div>
-    <div class="results-grid">
-      <div class="result-card">
-        <div class="result-number">95%</div>
-        <div class="result-label">of AI pilots fail.<br>Not ours.</div>
-      </div>
-      <div class="result-card">
-        <div class="result-number">15h</div>
-        <div class="result-label">per week your staff gets back.<br>That's somebody's whole job.</div>
-      </div>
-      <div class="result-card">
-        <div class="result-number">0</div>
-        <div class="result-label">training required. Zero apps.<br>Zero behavior change.</div>
-      </div>
-      <div class="result-card">
-        <div class="result-number">1</div>
-        <div class="result-label">architect who handles everything.<br>Not software you manage.</div>
-      </div>
-    </div>
-    <div class="results-note"><strong>AI-structured businesses sell for meaningfully more</strong> than paper-and-spreadsheet ones. Buyers pay for systems, not people. We build the systems.</div>
-  </div>
-
-  <!-- HOW IT WORKS -->
-  <div class="how-it-works">
-    <div class="how-header">
-      <div class="how-eyebrow">What Happens When You Say Yes</div>
-      <div class="how-title">Dashboard by Friday. Intelligence by Month Two. Compound Advantage Forever.</div>
-    </div>
-    <div class="how-steps">
-      <div class="how-step">
-        <div class="step-week">Week 1</div>
-        <div class="step-title">I Fix the Plumbing</div>
-        <div class="step-desc">I show up. I connect to what you already use — Google, QuickBooks, email, your filing cabinet. I build source-of-truth files for your operation. Your CEO has a live dashboard by Friday. Nobody on your team learns anything new.</div>
-      </div>
-      <div class="how-step">
-        <div class="step-week">Month 2</div>
-        <div class="step-title">The AI Starts Earning</div>
-        <div class="step-desc">RHONDA is handling the work nobody wanted. LEO is surfacing patterns in your data that nobody connected before. VERA is tracking commitments. The value compounds every single day because the data never stops flowing.</div>
-      </div>
-      <div class="how-step">
-        <div class="step-week">Month 6+</div>
-        <div class="step-title">Institutional Memory</div>
-        <div class="step-desc">Every procedure documented. Every decision archived. Every fix your best employee ever made — captured before they retire. Your business now has something most businesses don't: transferable knowledge that makes it worth more.</div>
-      </div>
+<!-- TESTIMONIAL -->
+<section class="testimonial">
+  <div class="testimonial-inner">
+    <div class="quote-mark">"</div>
+    <blockquote>"We spent $200K on AI consultants who gave us dashboards nobody opened. Tree Stand Partners gave us an architecture that runs itself."</blockquote>
+    <div class="testimonial-attr">
+      <div class="line"></div>
+      <span>Chief Executive Officer</span>
     </div>
   </div>
+</section>
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="footer-cta">
-      <div class="footer-ready"><em>Is your business structured for AI to work inside it?</em></div>
-      <div class="footer-tagline">If not, that's exactly what I build. Let's talk.</div>
+<!-- STATS -->
+<section class="stats">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-number">15+</div>
+      <div class="stat-label">Hours Saved Per Week</div>
+      <p class="stat-desc">Per staff member. Automated operational cycles previously requiring manual oversight.</p>
     </div>
-    <div class="footer-contact">
-      <div class="footer-name">David Jeffery</div>
-      <div class="footer-details">
-        (256) 710-5689 &nbsp;·&nbsp; info@treestandpartners.com<br>
-        <a href="https://www.treestandpartners.com">treestandpartners.com</a> &nbsp;·&nbsp; <a href="https://demo.treestandpartners.com">demo.treestandpartners.com</a>
-      </div>
+    <div class="stat-card">
+      <div class="stat-number">95%</div>
+      <div class="stat-label">Pilot Success Rate</div>
+      <p class="stat-desc">Industry average is 5%. We build the architecture first, so the AI actually works.</p>
     </div>
-  </footer>
+    <div class="stat-card">
+      <div class="stat-number">45-Day</div>
+      <div class="stat-label">Deployment</div>
+      <p class="stat-desc">Rapid architectural hardening without business disruption. Dashboard by Friday.</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">$0</div>
+      <div class="stat-label">Licensing Fees</div>
+      <p class="stat-desc">No recurring seat costs. You own your proprietary intelligence system.</p>
+    </div>
+  </div>
+</section>
 
-</div>
+<!-- HOW IT WORKS -->
+<section class="timeline" id="how">
+  <div class="timeline-header">
+    <div class="timeline-eyebrow">What Happens When You Say Yes</div>
+    <div class="timeline-title">Dashboard by Friday. Intelligence by Month Two. Compound Advantage Forever.</div>
+  </div>
+  <div class="timeline-steps">
+    <div class="timeline-step">
+      <div class="step-week">Week 1</div>
+      <div class="step-title">I Fix the Plumbing</div>
+      <p class="step-desc">I show up. I connect to what you already use — Google, QuickBooks, email, your filing cabinet. I build source-of-truth files for your operation. Your CEO has a live dashboard by Friday.</p>
+    </div>
+    <div class="timeline-step">
+      <div class="step-week">Month 2</div>
+      <div class="step-title">The AI Starts Earning</div>
+      <p class="step-desc">RHONDA is handling the work nobody wanted. LEO is surfacing patterns nobody connected before. VERA is tracking commitments. The value compounds every day.</p>
+    </div>
+    <div class="timeline-step">
+      <div class="step-week">Month 6+</div>
+      <div class="step-title">Institutional Memory</div>
+      <p class="step-desc">Every procedure documented. Every decision archived. Every fix your best employee ever made — captured before they retire. Your business now has transferable knowledge that makes it worth more.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SPLIT CTA -->
+<section class="split-cta" id="contact">
+  <div class="split-left">
+    <div>
+      <h2>Is your business structured for AI to work inside it?</h2>
+      <div class="bar"></div>
+      <p>Most organizations aren't. We help you rebuild the foundations so your company can scale into the age of autonomy.</p>
+    </div>
+  </div>
+  <div class="split-right">
+    <div style="max-width: 420px;">
+      <div class="form-label-top">Request Architecture Audit</div>
+      <form onsubmit="event.preventDefault()">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" placeholder="Johnathan Miller">
+        </div>
+        <div class="form-group">
+          <label>Business Email</label>
+          <input type="email" placeholder="jmiller@enterprise.com">
+        </div>
+        <div class="form-group">
+          <label>Company</label>
+          <input type="text" placeholder="Global Logistics Inc.">
+        </div>
+        <div class="form-group">
+          <label>Annual Revenue Range</label>
+          <select>
+            <option>$5M - $25M</option>
+            <option>$25M - $100M</option>
+            <option>$100M - $500M</option>
+            <option>$500M+</option>
+          </select>
+        </div>
+        <button type="submit" class="form-submit">Submit Consultation Request</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">Tree Stand Partners</div>
+      <div class="footer-sub">Built in North Alabama. Deployed Everywhere.</div>
+    </div>
+    <div class="footer-contact-info">
+      David Jeffery &nbsp;·&nbsp; (256) 710-5689<br>
+      <a href="mailto:info@treestandpartners.com">info@treestandpartners.com</a><br>
+      <a href="https://www.treestandpartners.com">treestandpartners.com</a> &nbsp;·&nbsp; <a href="https://demo.treestandpartners.com">demo.treestandpartners.com</a>
+    </div>
+    <div class="footer-links">
+      <a href="https://www.treestandpartners.com">Home</a>
+      <a href="https://www.treestandpartners.com/#/privacy-policy">Privacy</a>
+      <a href="https://www.treestandpartners.com/#/terms">Terms</a>
+    </div>
+    <div class="footer-copy">© 2026 Tree Stand Partners. All rights reserved.</div>
+  </div>
+</footer>
+
 </body>
 </html>
