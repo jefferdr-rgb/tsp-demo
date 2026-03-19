@@ -27,8 +27,8 @@
   }
 
   html, body {
-    width: 8.5in;
-    min-height: 11in;
+    width: 100%;
+    min-height: 100vh;
     background: var(--cream);
     font-family: 'Source Serif 4', Georgia, serif;
     color: var(--ink);
@@ -37,8 +37,10 @@
   }
 
   .page {
-    width: 8.5in;
-    min-height: 11in;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     background: var(--cream);
@@ -47,7 +49,7 @@
   /* ── HEADER ── */
   .header {
     background: var(--green);
-    padding: 0.3in 0.5in 0.25in;
+    padding: 28px 48px 24px;
     position: relative;
     overflow: hidden;
   }
@@ -173,7 +175,7 @@
   /* ── PROBLEM SECTION ── */
   .problem {
     background: var(--cream);
-    padding: 0.22in 0.5in 0.18in;
+    padding: 22px 48px 18px;
     border-bottom: 1px solid var(--cream-dark);
   }
 
@@ -205,7 +207,7 @@
   }
 
   .product-col {
-    padding: 0.22in 0.3in 0.2in;
+    padding: 22px 28px 20px;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -318,7 +320,7 @@
   /* ── RESULTS BAR ── */
   .results {
     background: var(--green);
-    padding: 0.18in 0.5in;
+    padding: 18px 48px;
     position: relative;
   }
 
@@ -403,7 +405,7 @@
   /* ── HOW IT WORKS ── */
   .how-it-works {
     background: var(--cream);
-    padding: 0.16in 0.5in;
+    padding: 16px 48px;
     border-top: 1px solid var(--cream-dark);
   }
 
@@ -472,7 +474,7 @@
   /* ── FOOTER ── */
   .footer {
     background: var(--cream-dark);
-    padding: 0.14in 0.5in;
+    padding: 14px 48px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -532,6 +534,61 @@
     font-weight: 600;
   }
 
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    .header-inner {
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .header-headline {
+      text-align: center;
+      max-width: 100%;
+    }
+
+    .header {
+      padding: 24px 24px 20px;
+    }
+
+    .products {
+      grid-template-columns: 1fr;
+    }
+
+    .results-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .how-steps {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .problem, .results, .how-it-works {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .footer {
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+      padding: 20px 24px;
+    }
+
+    .footer-contact {
+      text-align: center;
+    }
+
+    .product-name {
+      font-size: 32px;
+    }
+
+    .header-title {
+      font-size: 20px;
+    }
+  }
+
   /* ── PRINT ── */
   @media print {
     @page {
@@ -545,7 +602,9 @@
     }
 
     .page {
+      width: 8.5in;
       height: 11in;
+      max-width: 8.5in;
       page-break-after: avoid;
     }
 
