@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tree Stand Partners — Ms. Bettye + Rhonda</title>
+<title>Tree Stand Partners — Your AI Operations Team</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:wght@300;400;600&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@
   /* ── HEADER ── */
   .header {
     background: var(--green);
-    padding: 0.32in 0.5in 0.28in;
+    padding: 0.3in 0.5in 0.25in;
     position: relative;
     overflow: hidden;
   }
@@ -129,11 +129,12 @@
 
   .header-headline {
     text-align: right;
+    max-width: 55%;
   }
 
   .header-intro {
     font-family: 'Oswald', sans-serif;
-    font-size: 9px;
+    font-size: 8px;
     letter-spacing: 0.2em;
     color: var(--gold);
     text-transform: uppercase;
@@ -143,10 +144,10 @@
 
   .header-title {
     font-family: 'Playfair Display', serif;
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 900;
     color: var(--white);
-    line-height: 1.05;
+    line-height: 1.1;
     margin-bottom: 4px;
   }
 
@@ -156,7 +157,7 @@
 
   .header-sub {
     font-family: 'Source Serif 4', serif;
-    font-size: 11px;
+    font-size: 10.5px;
     color: rgba(255,255,255,0.65);
     font-weight: 300;
     font-style: italic;
@@ -169,130 +170,159 @@
     background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
   }
 
+  /* ── PROBLEM SECTION ── */
+  .problem {
+    background: var(--cream);
+    padding: 0.22in 0.5in 0.18in;
+    border-bottom: 1px solid var(--cream-dark);
+  }
+
+  .problem-text {
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+    text-align: center;
+    max-width: 6.5in;
+    margin: 0 auto;
+  }
+
+  .problem-text strong {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .problem-text em {
+    color: var(--gold);
+    font-style: normal;
+    font-weight: 600;
+  }
+
   /* ── PRODUCTS ROW ── */
   .products {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     flex: 1;
   }
 
-  /* ── MS. BETTYE ── */
-  .bettye {
-    background: var(--cream);
-    padding: 0.28in 0.38in 0.24in 0.5in;
-    border-right: 1px solid var(--cream-dark);
+  .product-col {
+    padding: 0.22in 0.3in 0.2in;
     position: relative;
+    display: flex;
+    flex-direction: column;
   }
 
-  .bettye::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--gold);
-    opacity: 0.3;
-  }
-
-  /* ── Rhonda ── */
-  .rhonda {
+  .product-col.dark {
     background: var(--green);
-    padding: 0.28in 0.5in 0.24in 0.38in;
-    position: relative;
+  }
+
+  .product-col.light {
+    background: var(--cream);
+  }
+
+  .product-col.mid {
+    background: var(--cream-dark);
+  }
+
+  .product-col.light + .product-col.mid,
+  .product-col.mid + .product-col.dark {
+    border-left: none;
   }
 
   .product-eyebrow {
     font-family: 'Oswald', sans-serif;
-    font-size: 8px;
+    font-size: 7px;
     letter-spacing: 0.25em;
     text-transform: uppercase;
     font-weight: 500;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+    color: var(--gold);
   }
-
-  .bettye .product-eyebrow { color: var(--gold); }
-  .rhonda .product-eyebrow { color: var(--gold); }
 
   .product-name {
     font-family: 'Playfair Display', serif;
-    font-size: 34px;
+    font-size: 28px;
     font-weight: 900;
     line-height: 1;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
     letter-spacing: -0.01em;
   }
 
-  .bettye .product-name { color: var(--green); }
-  .rhonda .product-name { color: var(--white); }
+  .light .product-name { color: var(--green); }
+  .mid .product-name { color: var(--green); }
+  .dark .product-name { color: var(--white); }
 
   .product-tagline {
     font-family: 'Source Serif 4', serif;
-    font-size: 11px;
+    font-size: 10px;
     font-style: italic;
     font-weight: 400;
     letter-spacing: 0.03em;
-    margin-bottom: 12px;
-    padding-bottom: 12px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
   }
 
-  .bettye .product-tagline {
+  .light .product-tagline {
     color: var(--ink-soft);
     border-bottom: 1px solid var(--cream-dark);
   }
 
-  .rhonda .product-tagline {
+  .mid .product-tagline {
+    color: var(--ink-soft);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .dark .product-tagline {
     color: rgba(255,255,255,0.6);
     border-bottom: 1px solid rgba(255,255,255,0.12);
   }
 
   .product-desc {
-    font-size: 10.5px;
-    line-height: 1.65;
-    margin-bottom: 14px;
+    font-size: 9.5px;
+    line-height: 1.6;
+    margin-bottom: 10px;
     font-weight: 400;
   }
 
-  .bettye .product-desc { color: var(--ink-soft); }
-  .rhonda .product-desc { color: rgba(255,255,255,0.8); }
+  .light .product-desc { color: var(--ink-soft); }
+  .mid .product-desc { color: var(--ink-soft); }
+  .dark .product-desc { color: rgba(255,255,255,0.8); }
 
   .features {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
   }
 
   .features li {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    font-size: 10px;
+    gap: 6px;
+    font-size: 9px;
     line-height: 1.4;
     font-weight: 400;
   }
 
-  .bettye .features li { color: var(--ink-soft); }
-  .rhonda .features li { color: rgba(255,255,255,0.8); }
+  .light .features li { color: var(--ink-soft); }
+  .mid .features li { color: var(--ink-soft); }
+  .dark .features li { color: rgba(255,255,255,0.8); }
 
   .feat-arrow {
-    font-size: 9px;
+    font-size: 8px;
     margin-top: 1px;
     flex-shrink: 0;
     font-weight: 600;
+    color: var(--gold);
   }
 
-  .bettye .feat-arrow { color: var(--gold); }
-  .rhonda .feat-arrow { color: var(--gold); }
-
-  /* ── PRICING ── */
-  .pricing {
+  /* ── RESULTS BAR ── */
+  .results {
     background: var(--green);
-    padding: 0.2in 0.5in;
+    padding: 0.18in 0.5in;
     position: relative;
   }
 
-  .pricing::before {
+  .results::before {
     content: '';
     position: absolute;
     top: 0;
@@ -302,103 +332,60 @@
     background: linear-gradient(90deg, transparent, var(--gold), transparent);
   }
 
-  .pricing-header {
+  .results-header {
     text-align: center;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
 
-  .pricing-eyebrow {
+  .results-eyebrow {
     font-family: 'Oswald', sans-serif;
-    font-size: 8px;
+    font-size: 7px;
     letter-spacing: 0.25em;
     color: var(--gold);
     text-transform: uppercase;
     font-weight: 500;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
 
-  .pricing-title {
+  .results-title {
     font-family: 'Playfair Display', serif;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--white);
   }
 
-  .pricing-cards {
+  .results-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 10px;
     margin-bottom: 10px;
   }
 
-  .card {
+  .result-card {
     border: 1px solid rgba(201,151,42,0.3);
     border-radius: 4px;
-    padding: 14px 16px;
-    position: relative;
+    padding: 10px 12px;
     background: rgba(255,255,255,0.04);
+    text-align: center;
   }
 
-  .card.featured {
-    border: 2px solid var(--gold);
-    background: rgba(201,151,42,0.08);
-  }
-
-  .card-badge {
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--gold);
-    color: var(--green);
-    font-family: 'Oswald', sans-serif;
-    font-size: 7px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    padding: 3px 10px;
-    border-radius: 2px;
-    white-space: nowrap;
-  }
-
-  .card-name {
-    font-family: 'Oswald', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--white);
-    margin-bottom: 6px;
-    line-height: 1.2;
-  }
-
-  .card-price {
+  .result-number {
     font-family: 'Playfair Display', serif;
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 900;
     color: var(--gold);
     line-height: 1;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
   }
 
-  .card-price span {
-    font-size: 13px;
-    font-family: 'Source Serif 4', serif;
+  .result-label {
+    font-size: 8px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.3;
     font-weight: 400;
-    color: rgba(255,255,255,0.5);
   }
 
-  .card-desc {
-    font-size: 9px;
-    color: rgba(255,255,255,0.55);
-    font-style: italic;
-    line-height: 1.4;
-    margin-top: 6px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    padding-top: 6px;
-  }
-
-  .pricing-note {
+  .results-note {
     text-align: center;
     font-family: 'Source Serif 4', serif;
     font-size: 9.5px;
@@ -407,16 +394,85 @@
     letter-spacing: 0.02em;
   }
 
-  .pricing-note strong {
+  .results-note strong {
     color: var(--gold);
     font-style: normal;
     font-weight: 600;
   }
 
+  /* ── HOW IT WORKS ── */
+  .how-it-works {
+    background: var(--cream);
+    padding: 0.16in 0.5in;
+    border-top: 1px solid var(--cream-dark);
+  }
+
+  .how-header {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .how-eyebrow {
+    font-family: 'Oswald', sans-serif;
+    font-size: 7px;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+
+  .how-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  .how-steps {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .how-step {
+    text-align: center;
+  }
+
+  .step-week {
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .step-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 3px;
+    line-height: 1.2;
+  }
+
+  .step-desc {
+    font-size: 8.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    font-weight: 400;
+  }
+
+  .step-arrow {
+    display: none;
+  }
+
   /* ── FOOTER ── */
   .footer {
     background: var(--cream-dark);
-    padding: 0.16in 0.5in;
+    padding: 0.14in 0.5in;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -431,7 +487,7 @@
 
   .footer-ready {
     font-family: 'Playfair Display', serif;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--green);
   }
@@ -442,7 +498,7 @@
   }
 
   .footer-tagline {
-    font-size: 8.5px;
+    font-size: 8px;
     color: var(--ink-soft);
     font-style: italic;
     font-weight: 300;
@@ -452,12 +508,12 @@
     text-align: right;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
   }
 
   .footer-name {
     font-family: 'Oswald', sans-serif;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.1em;
     color: var(--green);
@@ -465,9 +521,9 @@
   }
 
   .footer-details {
-    font-size: 9px;
+    font-size: 8.5px;
     color: var(--ink-soft);
-    line-height: 1.6;
+    line-height: 1.5;
   }
 
   .footer-details a {
@@ -519,94 +575,147 @@
         </div>
       </div>
       <div class="header-headline">
-        <div class="header-intro">Introducing</div>
-        <div class="header-title">Ms. Bettye <span>&</span> Rhonda</div>
-        <div class="header-sub">Two AI tools. One complete business.</div>
+        <div class="header-intro">Your Dedicated AI Architect</div>
+        <div class="header-title">An Entire <span>AI Operations Team</span><br>For Less Than One Employee</div>
+        <div class="header-sub">Three tools. One architect. Nothing falls through the cracks.</div>
       </div>
     </div>
   </header>
 
   <div class="gold-rule"></div>
 
-  <!-- PRODUCTS -->
+  <!-- PROBLEM FRAMING -->
+  <div class="problem">
+    <p class="problem-text">
+      <strong>95% of AI pilots fail</strong> — not because the technology doesn't work, but because nobody
+      connects it to how you actually run your business. You don't need more software.
+      You need someone who understands your operations, your data, and your people —
+      and builds AI that works <em>the way you already work.</em>
+    </p>
+  </div>
+
+  <!-- THREE PRODUCTS -->
   <div class="products">
 
-    <!-- MS. BETTYE -->
-    <div class="bettye">
-      <div class="product-eyebrow">Back Office Automation</div>
-      <div class="product-name">Ms. Bettye</div>
-      <div class="product-tagline">Your AI Back Office</div>
+    <!-- RHONDA -->
+    <div class="product-col light">
+      <div class="product-eyebrow">Your Staff</div>
+      <div class="product-name">Rhonda</div>
+      <div class="product-tagline">AI Office Manager</div>
       <p class="product-desc">
-        She handles bids, invoices, collections, scheduling, and customer communications — all by text. No app to download. No portal to log into. Works on any phone, exactly the way you already communicate. Every morning at 7:30 she texts you what she handled overnight.
+        AI tools for your whole team — connected to the systems you already use. Documents, spreadsheets, email, calendar. Your people work smarter without changing how they work.
       </p>
       <ul class="features">
-        <li><span class="feat-arrow">▸</span> Runs entirely on text — any phone, no app</li>
-        <li><span class="feat-arrow">▸</span> Sends estimates within the hour</li>
-        <li><span class="feat-arrow">▸</span> Invoices completed jobs automatically</li>
-        <li><span class="feat-arrow">▸</span> Follows up on unpaid invoices</li>
-        <li><span class="feat-arrow">▸</span> Confirms appointments &amp; optimizes your route</li>
-        <li><span class="feat-arrow">▸</span> Weekly money summary every Friday</li>
+        <li><span class="feat-arrow">▸</span> Scans receipts, invoices, SOPs — extracts everything</li>
+        <li><span class="feat-arrow">▸</span> Writes emails in your company's voice</li>
+        <li><span class="feat-arrow">▸</span> Summarizes contracts in plain English</li>
+        <li><span class="feat-arrow">▸</span> QR codes on equipment link to live SOPs</li>
+        <li><span class="feat-arrow">▸</span> 28+ custom tools built for your operation</li>
+        <li><span class="feat-arrow">▸</span> Works on any phone — no app, no training</li>
       </ul>
     </div>
 
-    <!-- Rhonda -->
-    <div class="rhonda">
-      <div class="product-eyebrow">Team AI Tools</div>
-      <div class="product-name">Rhonda</div>
-      <div class="product-tagline">Your AI Office Manager</div>
+    <!-- LEO -->
+    <div class="product-col mid">
+      <div class="product-eyebrow">Your Executive</div>
+      <div class="product-name">Leo</div>
+      <div class="product-tagline">AI Intelligence Layer</div>
       <p class="product-desc">
-        Rhonda gives your team AI-powered tools connected to the systems you already use — Google, email, files, calendar. Your people work smarter without changing how they work. No training required.
+        Every morning, Leo reads your data — QuickBooks, Google Sheets, scanned documents, team activity — and tells you what matters. Revenue trends, compliance gaps, cash flow patterns. No dashboards to check. It comes to you.
       </p>
       <ul class="features">
-        <li><span class="feat-arrow">▸</span> Writes emails in your company's voice</li>
-        <li><span class="feat-arrow">▸</span> Organizes jobs, invoices, customer records</li>
-        <li><span class="feat-arrow">▸</span> Summarizes contracts in plain English</li>
-        <li><span class="feat-arrow">▸</span> Handles customer replies professionally</li>
-        <li><span class="feat-arrow">▸</span> Connected to Google or Microsoft</li>
-        <li><span class="feat-arrow">▸</span> Custom-built for your business</li>
+        <li><span class="feat-arrow">▸</span> Finds patterns nobody has connected before</li>
+        <li><span class="feat-arrow">▸</span> Morning briefings with decisions, not data</li>
+        <li><span class="feat-arrow">▸</span> Tracks every prospect, deal, and relationship</li>
+        <li><span class="feat-arrow">▸</span> Archives every decision for institutional memory</li>
+        <li><span class="feat-arrow">▸</span> Confidence scores on every metric — you see what's real</li>
+        <li><span class="feat-arrow">▸</span> Gets smarter every week as more data flows in</li>
+      </ul>
+    </div>
+
+    <!-- VERA -->
+    <div class="product-col dark">
+      <div class="product-eyebrow">Your CEO</div>
+      <div class="product-name">Vera</div>
+      <div class="product-tagline">AI Executive Assistant</div>
+      <p class="product-desc">
+        Your personal AI that knows your schedule, your preferences, and your commitments. Sends you reminders by text, follows up on promises you made in meetings, and keeps the threads you're tracking from slipping.
+      </p>
+      <ul class="features">
+        <li><span class="feat-arrow">▸</span> Runs entirely on text — works on any phone</li>
+        <li><span class="feat-arrow">▸</span> Remembers every commitment and follows up</li>
+        <li><span class="feat-arrow">▸</span> Weekly check-ins on metrics LEO can't pull automatically</li>
+        <li><span class="feat-arrow">▸</span> Learns your patterns, priorities, and preferences</li>
+        <li><span class="feat-arrow">▸</span> Morning texts with what's ahead and what needs you</li>
+        <li><span class="feat-arrow">▸</span> Your AI never forgets what you told it last quarter</li>
       </ul>
     </div>
 
   </div>
 
-  <!-- PRICING -->
-  <div class="pricing">
-    <div class="pricing-header">
-      <div class="pricing-eyebrow">Simple, Honest Pricing</div>
-      <div class="pricing-title">Choose What Your Business Needs</div>
+  <!-- RESULTS -->
+  <div class="results">
+    <div class="results-header">
+      <div class="results-eyebrow">What Changes</div>
+      <div class="results-title">Week 1, Not Month 6</div>
     </div>
-    <div class="pricing-cards">
-      <div class="card">
-        <div class="card-name">Ms. Bettye<br>Only</div>
-        <div class="card-price">$149<span>/mo</span></div>
-        <div class="card-desc">Back office on autopilot. Bids, invoices, collections, scheduling, and customer comms — handled.</div>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-number">48h</div>
+        <div class="result-label">From raw data chaos<br>to a live CEO dashboard</div>
       </div>
-      <div class="card">
-        <div class="card-name">Rhonda<br>Only</div>
-        <div class="card-price">$250<span>/mo</span></div>
-        <div class="card-desc">AI tools for your whole team, connected to Google or Microsoft. Everyone works smarter from day one.</div>
+      <div class="result-card">
+        <div class="result-number">90s</div>
+        <div class="result-label">To process a stack of<br>receipts that took all Tuesday</div>
       </div>
-      <div class="card featured">
-        <div class="card-badge">Best Value — Save $50</div>
-        <div class="card-name">Ms. Bettye<br>+ Rhonda</div>
-        <div class="card-price">$349<span>/mo</span></div>
-        <div class="card-desc">The complete AI business stack. Back office automated. Team empowered. Nothing falls through the cracks.</div>
+      <div class="result-card">
+        <div class="result-number">0</div>
+        <div class="result-label">Apps to download.<br>Training sessions. Portals.</div>
+      </div>
+      <div class="result-card">
+        <div class="result-number">1</div>
+        <div class="result-label">Person who handles<br>everything. Your architect.</div>
       </div>
     </div>
-    <div class="pricing-note"><strong>First month free.</strong> No contract. No setup fee. Cancel anytime.</div>
+    <div class="results-note"><strong>I handle everything.</strong> You don't manage software — you get outcomes.</div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-it-works">
+    <div class="how-header">
+      <div class="how-eyebrow">The Process</div>
+      <div class="how-title">Three Steps to an AI-Powered Operation</div>
+    </div>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="step-week">Week 1</div>
+        <div class="step-title">Fix the Plumbing</div>
+        <div class="step-desc">I connect to your existing systems — Google, QuickBooks, email. Set up source-of-truth files. Your CEO has a live dashboard by Friday. Zero training required.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-week">Month 1</div>
+        <div class="step-title">Build Intelligence</div>
+        <div class="step-desc">RHONDA learns your operations. LEO starts finding patterns in your data nobody connected before. VERA begins tracking commitments. Value compounds daily.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-week">Month 3+</div>
+        <div class="step-title">Compound Advantage</div>
+        <div class="step-desc">Predictive maintenance from history. Compliance trending. Tribal knowledge captured. Institutional memory that makes your business worth more.</div>
+      </div>
+    </div>
   </div>
 
   <!-- FOOTER -->
   <footer class="footer">
     <div class="footer-cta">
       <div class="footer-ready">Ready to see <em>farther?</em></div>
-      <div class="footer-tagline">Tree Stand Partners · See Farther From 20 Feet Up · North Alabama</div>
+      <div class="footer-tagline">Tree Stand Partners · North Alabama · AI That Works the Way You Already Work</div>
     </div>
     <div class="footer-contact">
       <div class="footer-name">David Jeffery</div>
       <div class="footer-details">
         (256) 710-5689 &nbsp;·&nbsp; info@treestandpartners.com<br>
-        <a href="https://www.treestandpartners.com">www.treestandpartners.com</a> &nbsp;·&nbsp; <a href="https://demo.treestandpartners.com">demo.treestandpartners.com</a>
+        <a href="https://www.treestandpartners.com">treestandpartners.com</a> &nbsp;·&nbsp; <a href="https://demo.treestandpartners.com">demo.treestandpartners.com</a>
       </div>
     </div>
   </footer>
