@@ -1,12 +1,37 @@
 // ── Image Upload Pipeline ────────────────────────────────────────────────────
 // Client-side resize to Claude Vision optimal (1568px max), base64 conversion
 // Supports file picker and camera capture on mobile
+// Handles HEIC/HEIF (iPhone photos) via heic2any conversion
+
+/**
+ * Check if a file is HEIC/HEIF format by extension or MIME type.
+ */
+function isHeic(file) {
+  const ext = file.name?.split(".").pop().toLowerCase();
+  return ext === "heic" || ext === "heif" || file.type === "image/heic" || file.type === "image/heif";
+}
+
+/**
+ * Convert HEIC/HEIF file to JPEG blob using heic2any.
+ * Returns the original file unchanged if not HEIC.
+ */
+export async function convertHeicIfNeeded(file) {
+  if (!isHeic(file)) return file;
+  const heic2any = (await import("heic2any")).default;
+  const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.85 });
+  // heic2any may return array for multi-image HEIC — take first
+  const result = Array.isArray(blob) ? blob[0] : blob;
+  return new File([result], file.name.replace(/\.heic$/i, ".jpg").replace(/\.heif$/i, ".jpg"), { type: "image/jpeg" });
+}
 
 /**
  * Resize an image file to fit within maxDim (default 1568px — Claude Vision optimal).
  * Returns { base64, mediaType, width, height }
  */
 export async function resizeImage(file, maxDim = 1568) {
+  // Convert HEIC to JPEG first — works on all browsers
+  const safeFile = await convertHeicIfNeeded(file);
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("Failed to read image file"));
@@ -30,7 +55,7 @@ export async function resizeImage(file, maxDim = 1568) {
         ctx.drawImage(img, 0, 0, width, height);
 
         // Use JPEG for photos (smaller), PNG for screenshots/documents
-        const isPhoto = file.type === "image/jpeg" || file.type === "image/jpg";
+        const isPhoto = safeFile.type === "image/jpeg" || safeFile.type === "image/jpg";
         const outputType = isPhoto ? "image/jpeg" : "image/png";
         const quality = isPhoto ? 0.85 : undefined;
         const dataUrl = canvas.toDataURL(outputType, quality);
@@ -41,7 +66,7 @@ export async function resizeImage(file, maxDim = 1568) {
       };
       img.src = reader.result;
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(safeFile);
   });
 }
 

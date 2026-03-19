@@ -8,20 +8,36 @@ const C = {
   text: "#2c3528", textMuted: "#7a7462", danger: "#c0392b",
 };
 
-// ── File → Claude image block ────────────────────────────────────────────────
-function fileToImageBlock(file) {
+// ── HEIC detection ───────────────────────────────────────────────────────────
+function isHeicFile(file) {
+  const ext = file.name?.split(".").pop().toLowerCase();
+  return ext === "heic" || ext === "heif" || file.type === "image/heic" || file.type === "image/heif";
+}
+
+// ── File → Claude image block (with HEIC conversion) ────────────────────────
+async function fileToImageBlock(file) {
+  let safeFile = file;
+
+  // Convert HEIC/HEIF to JPEG before reading
+  if (isHeicFile(file)) {
+    const heic2any = (await import("heic2any")).default;
+    const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.85 });
+    const result = Array.isArray(blob) ? blob[0] : blob;
+    safeFile = new File([result], file.name.replace(/\.heic$/i, ".jpg").replace(/\.heif$/i, ".jpg"), { type: "image/jpeg" });
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result.split(",")[1];
-      const mediaType = file.type === "application/pdf" ? "application/pdf" : file.type.startsWith("image/") ? file.type : "image/jpeg";
+      const mediaType = safeFile.type === "application/pdf" ? "application/pdf" : safeFile.type.startsWith("image/") ? safeFile.type : "image/jpeg";
       resolve({
         type: mediaType === "application/pdf" ? "document" : "image",
         source: { type: "base64", media_type: mediaType, data: base64 },
       });
     };
     reader.onerror = reject;
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(safeFile);
   });
 }
 
@@ -255,7 +271,7 @@ export default function BatchScan() {
 
   async function handleFiles(fileList) {
     const validFiles = Array.from(fileList).filter(f =>
-      f.type.startsWith("image/") || f.type === "application/pdf"
+      f.type.startsWith("image/") || f.type === "application/pdf" || isHeicFile(f)
     );
     if (validFiles.length === 0) return;
     setFiles(prev => [...prev, ...validFiles]);
@@ -366,7 +382,7 @@ export default function BatchScan() {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept="image/*,application/pdf"
+                accept="image/*,.heic,.heif,application/pdf"
                 onChange={e => handleFiles(e.target.files)}
                 style={{ display: "none" }}
               />

@@ -420,10 +420,25 @@ function isImageFile(file) {
 }
 
 // Convert image to base64 JPEG (resized for Claude vision, max 1568px)
+// Handles HEIC/HEIF (iPhone photos) via heic2any conversion
 async function imageToBase64(file) {
+  // Convert HEIC to JPEG first — works on all browsers, not just Safari
+  let safeFile = file;
+  const ext = file.name?.split(".").pop().toLowerCase();
+  if (ext === "heic" || ext === "heif" || file.type === "image/heic" || file.type === "image/heif") {
+    try {
+      const heic2any = (await import("heic2any")).default;
+      const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.85 });
+      const result = Array.isArray(blob) ? blob[0] : blob;
+      safeFile = new File([result], file.name.replace(/\.heic$/i, ".jpg").replace(/\.heif$/i, ".jpg"), { type: "image/jpeg" });
+    } catch (e) {
+      console.warn("HEIC conversion failed, trying native decode:", e);
+      // Fall through to canvas approach — may work on Safari
+    }
+  }
+
   return new Promise((resolve) => {
-    // For HEIC or any image, use canvas to convert to JPEG
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(safeFile);
     const img = new Image();
     img.onload = () => {
       const maxDim = 1568;
@@ -440,7 +455,7 @@ async function imageToBase64(file) {
       ctx.drawImage(img, 0, 0, w, h);
       const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
       URL.revokeObjectURL(url);
-      resolve(dataUrl.split(",")[1]); // strip data:image/jpeg;base64, prefix
+      resolve(dataUrl.split(",")[1]);
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
