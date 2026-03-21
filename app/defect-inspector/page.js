@@ -1,6 +1,7 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useImageCapture } from "../_lib/useImageCapture";
+import { useClientConfig, getClientMeta } from "../_lib/power-tools/client-context";
 
 const C = {
   bg: "#f4f1ea", surface: "#ffffff", chrome: "#2c3528", gold: "#c49b2a",
@@ -20,7 +21,9 @@ const VERDICT_STYLES = {
   REJECT: { bg: "rgba(192,57,43,0.08)", border: "rgba(192,57,43,0.25)", color: C.danger, icon: "⛔", label: "REJECT — Do Not Ship" },
 };
 
-export default function DefectInspectorPage() {
+function DefectInspectorInner() {
+  const { clientKey } = useClientConfig();
+  const meta = getClientMeta(clientKey);
   const image = useImageCapture();
   const [productType, setProductType] = useState("");
   const [result, setResult] = useState(null);
@@ -41,7 +44,7 @@ export default function DefectInspectorPage() {
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
           max_tokens: 4096,
-          system: `You are RHONDA's Quality Control AI for a pet food manufacturing facility (Sunshine Mills — dry kibble, wet food, treats).
+          system: `You are RHONDA's Quality Control AI for ${meta.name} (${meta.industry}).
 
 A worker has photographed a product sample or packaging for instant quality inspection.
 
@@ -121,7 +124,7 @@ Be precise and professional. If the product looks good, say so — false rejects
             <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11 }}>Defect Inspector</div>
           </div>
         </div>
-        <a href="/sunshine" style={{ color: C.gold, fontSize: 12, textDecoration: "none" }}>Back to RHONDA</a>
+        <a href={meta.backHref} style={{ color: C.gold, fontSize: 12, textDecoration: "none" }}>Back to RHONDA</a>
       </div>
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px" }}>
@@ -309,5 +312,13 @@ Be precise and professional. If the product looks good, say so — false rejects
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
+  );
+}
+
+export default function DefectInspectorPage() {
+  return (
+    <Suspense>
+      <DefectInspectorInner />
+    </Suspense>
   );
 }

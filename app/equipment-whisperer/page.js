@@ -1,7 +1,8 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useImageCapture } from "../_lib/useImageCapture";
 import { useVoiceInput } from "../_lib/useVoiceInput";
+import { useClientConfig, getClientMeta } from "../_lib/power-tools/client-context";
 
 const C = {
   bg: "#f4f1ea", surface: "#ffffff", chrome: "#2c3528", gold: "#c49b2a",
@@ -52,7 +53,9 @@ const EQUIPMENT_DB = {
   },
 };
 
-export default function EquipmentWhispererPage() {
+function EquipmentWhispererInner() {
+  const { clientKey } = useClientConfig();
+  const meta = getClientMeta(clientKey);
   const image = useImageCapture();
   const voice = useVoiceInput({ lang: "en-US" });
   const [selectedEquipment, setSelectedEquipment] = useState("");
@@ -93,7 +96,7 @@ export default function EquipmentWhispererPage() {
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
           max_tokens: 3072,
-          system: `You are RHONDA's Equipment Whisperer — an AI maintenance diagnostic system for Sunshine Mills pet food factory.
+          system: `You are RHONDA's Equipment Whisperer — an AI maintenance diagnostic system for ${meta.name} (${meta.industry}).
 
 You have full access to equipment maintenance history, known issues, veteran tips, and SOPs.
 
@@ -150,7 +153,7 @@ RESPOND WITH VALID JSON:
             <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11 }}>Equipment Whisperer</div>
           </div>
         </div>
-        <a href="/sunshine" style={{ color: C.gold, fontSize: 12, textDecoration: "none" }}>Back to RHONDA</a>
+        <a href={meta.backHref} style={{ color: C.gold, fontSize: 12, textDecoration: "none" }}>Back to RHONDA</a>
       </div>
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px" }}>
@@ -345,5 +348,13 @@ RESPOND WITH VALID JSON:
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
       `}</style>
     </div>
+  );
+}
+
+export default function EquipmentWhispererPage() {
+  return (
+    <Suspense>
+      <EquipmentWhispererInner />
+    </Suspense>
   );
 }
