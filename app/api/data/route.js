@@ -45,10 +45,10 @@ export async function GET(request) {
   const status = statusRaw && statusRaw.length <= MAX_FILTER_LENGTH ? statusRaw : null;
   const dept = deptRaw && deptRaw.length <= MAX_FILTER_LENGTH ? deptRaw : null;
 
-  // H-FIX-2: parseInt("abc") → NaN → Math.min(NaN, 500) → NaN → no limit applied.
-  // Guard with isNaN before Math.min.
+  // H-FIX-2: parseInt("abc") → NaN → no limit applied. parseInt("-1") passes isNaN
+  // but Math.min(-1, 500) = -1 → Supabase errors. Clamp to [1, MAX_LIMIT].
   const parsedLimit = parseInt(searchParams.get("limit") || "100", 10);
-  const limit = Math.min(isNaN(parsedLimit) ? 100 : parsedLimit, MAX_LIMIT);
+  const limit = Math.min(Math.max(isNaN(parsedLimit) ? 100 : parsedLimit, 1), MAX_LIMIT);
 
   const orderBy = searchParams.get("order") || ORDER_DEFAULTS[table] || "created_at";
   const asc = searchParams.get("asc") === "true";
