@@ -1,5 +1,6 @@
 // app/_lib/api-auth.js
-import { timingSafeEqual } from "crypto";
+// No Node.js crypto import — uses pure JS constant-time comparison
+// that works in both Node.js and Edge runtimes.
 
 const SECRET = process.env.INTERNAL_API_SECRET;
 
@@ -10,19 +11,32 @@ export const VALID_CLIENTS = new Set([
 ]);
 
 /**
+ * Constant-time string comparison — prevents timing oracle attacks.
+ * Pure JS, no Node.js builtins required.
+ */
+function safeEqual(a, b) {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  // Compare against the longer string's length to avoid length oracle
+  const maxLen = Math.max(a.length, b.length);
+  let result = 0;
+  for (let i = 0; i < maxLen; i++) {
+    // charCodeAt returns NaN for out-of-bounds, XOR with 0 keeps the diff
+    result |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  }
+  // Also flag length mismatch
+  result |= a.length ^ b.length;
+  return result === 0;
+}
+
+/**
  * Call at the top of every route handler.
  * Returns a Response if auth fails (caller must return it immediately),
  * or null if auth passes.
  *
- * Uses constant-time comparison (timingSafeEqual) to prevent timing oracle attacks.
- *
- * NOTE on tenant isolation (C-FIX-2): This shared-secret pattern authenticates
- * the caller but does NOT bind them to a specific client_key. A caller with the
- * secret can request data for any valid client. True tenant isolation requires
- * per-tenant credentials (e.g. short-lived JWTs issued by a session endpoint).
- * Each route must independently validate the requested client_key against the
- * session's authorized scope. For now, routes validate against VALID_CLIENTS
- * (prevents unknown clients) but do not prevent lateral movement between known ones.
+ * NOTE on tenant isolation: This shared-secret authenticates the caller
+ * but does NOT bind them to a specific client_key. Each route independently
+ * validates client_key against VALID_CLIENTS, but lateral movement between
+ * known clients is a structural limitation requiring per-tenant credentials.
  */
 export function requireAuth(request) {
   if (!SECRET) {
@@ -30,21 +44,9 @@ export function requireAuth(request) {
     return Response.json({ error: "Server misconfiguration" }, { status: 500 });
   }
   const provided = request.headers.get("x-internal-secret");
-  if (!provided) {
+  if (!provided || !safeEqual(provided, SECRET)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  // C-FIX-1: constant-time comparison prevents timing oracle byte-by-byte recovery.
-  // Pad both buffers to equal length before compare — timingSafeEqual requires same length.
-  const maxLen = Math.max(provided.length, SECRET.length);
-  const a = Buffer.alloc(maxLen);
-  const b = Buffer.alloc(maxLen);
-  a.write(provided);
-  b.write(SECRET);
-  if (!timingSafeEqual(a, b)) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   return null;
 }
 
