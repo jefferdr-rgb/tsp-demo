@@ -1,10 +1,49 @@
+// app/api/leo-push/route.js
+import { requireAuth, requireValidClient } from "../../_lib/api-auth";
+
+const MAX_RAW_DATA_LENGTH = 100_000; // 100 KB as a string
+const MAX_EXTRACT_CHARS = 4_000;     // chars passed to the LLM
+const FETCH_TIMEOUT_MS = 30_000;
+
 export async function POST(request) {
-  const { clientKey, rawData } = await request.json();
+  // C-1: auth gate
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
+  // M-3: read raw text first so we can gate on length before JSON.parse
+  let rawText;
+  try {
+    rawText = await request.text();
+  } catch {
+    return Response.json({ error: "Failed to read request body" }, { status: 400 });
+  }
+
+  if (rawText.length > MAX_RAW_DATA_LENGTH) {
+    return Response.json({ error: "Request body too large (max 100 KB)" }, { status: 413 });
+  }
+
+  let body;
+  try {
+    body = JSON.parse(rawText);
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const { clientKey, rawData } = body;
+
   if (!clientKey || !rawData) {
     return Response.json({ error: "Missing clientKey or rawData" }, { status: 400 });
   }
 
-  // Step 1: Claude extracts structured metrics from raw spreadsheet data
+  if (typeof rawData !== "string" || rawData.length > MAX_RAW_DATA_LENGTH) {
+    return Response.json({ error: "rawData too large" }, { status: 400 });
+  }
+
+  // C-3: clientKey must be in the validated allowlist
+  const clientError = requireValidClient(clientKey);
+  if (clientError) return clientError;
+
+  // ── Extract metrics via Haiku ──────────────────────────────────────────────
   let metrics;
   try {
     const extractRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -13,71 +52,69 @@ export async function POST(request) {
         "Content-Type": "application/json",
         "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
-        "anthropic-beta": "prompt-caching-2024-07-31",
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 600,
-        system: [{ type: "text", cache_control: { type: "ephemeral" }, text: `You extract business KPI metrics from spreadsheet data and return a JSON object.
-
-Return ONLY valid JSON in this exact shape — no explanation, no markdown:
-{
-  "kpis": [
-    {"label": "Revenue (MTD)", "value": 0, "prefix": "$", "change": "+0%", "up": true},
-    {"label": "Units Sold", "value": 0, "change": "+0%", "up": true},
-    {"label": "Active SKUs", "value": 0, "change": "+0%", "up": true},
-    {"label": "Fill Rate", "value": 0, "suffix": "%", "change": "+0%", "up": true}
-  ],
-  "pipeline": "$0",
-  "pipelineChange": "+0%",
-  "revenueMTD": 0,
-  "revenueMTDLabel": "$0",
-  "revenueTarget": 0,
-  "revenueTargetLabel": "$0",
-  "revenueProgress": 0
-}
-
-Rules:
-- Use real numbers from the data. Make label names match the data (e.g. "Bags Sold" instead of "Units Sold" if that fits better).
-- For "up": true if change is positive, false if negative.
-- For "revenueProgress": the percentage of revenue target achieved (0-100).
-- If a field can't be determined, use a sensible default.
-- Return only the JSON object, nothing else.` }],
+        system: "Extract KPI metrics from the provided data. Return a single valid JSON object only — no commentary, no markdown fences.",
         messages: [
-          { role: "user", content: `Extract metrics from this data:\n\n${rawData.slice(0, 4000)}` },
+          {
+            role: "user",
+            content: `Extract metrics:\n\n${rawData.slice(0, MAX_EXTRACT_CHARS)}`,
+          },
         ],
       }),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
+
+    if (!extractRes.ok) {
+      console.error("[leo-push] Anthropic extract error:", extractRes.status);
+      return Response.json({ error: "Metric extraction failed" }, { status: 502 });
+    }
 
     const extractData = await extractRes.json();
     const raw = extractData.content?.[0]?.text?.trim();
-    const text = raw?.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-    // Haiku sometimes wraps JSON in explanation text — extract the JSON object
-    const jsonMatch = text?.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON found in response");
+    // L-FIX-2: greedy regex takes first { to last } — can span invalid JSON if model adds
+    // commentary after the object. Instruct model to return only JSON (system prompt above)
+    // and use a non-greedy first-match as a secondary guard.
+    const jsonMatch = raw?.match(/\{[\s\S]*?\}/);
+    if (!jsonMatch) {
+      console.error("[leo-push] No JSON in extraction response:", raw?.slice(0, 200));
+      return Response.json({ error: "Failed to extract metrics" }, { status: 500 });
+    }
     metrics = JSON.parse(jsonMatch[0]);
-  } catch {
-    return Response.json({ error: "Failed to extract metrics from data" }, { status: 500 });
+  } catch (err) {
+    if (err.name === "TimeoutError") {
+      return Response.json({ error: "Metric extraction timed out" }, { status: 504 });
+    }
+    console.error("[leo-push] Extraction unexpected error:", err);
+    return Response.json({ error: "Failed to extract metrics" }, { status: 500 });
   }
 
-  // Step 2: Push metrics to LEO's update endpoint
+  // ── Push to LEO ────────────────────────────────────────────────────────────
   try {
     const leoRes = await fetch(`${process.env.LEO_URL}/api/leo/update`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.LEO_UPDATE_SECRET}`,
+        Authorization: `Bearer ${process.env.LEO_UPDATE_SECRET}`,
       },
       body: JSON.stringify({ clientKey, metrics }),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     if (!leoRes.ok) {
-      const err = await leoRes.json();
-      return Response.json({ error: "LEO update failed", detail: err }, { status: 502 });
+      const errBody = await leoRes.text();
+      console.error("[leo-push] LEO update failed:", leoRes.status, errBody.slice(0, 500));
+      return Response.json({ error: "LEO update failed" }, { status: 502 });
     }
 
     return Response.json({ ok: true, metrics });
-  } catch {
+  } catch (err) {
+    if (err.name === "TimeoutError") {
+      return Response.json({ error: "LEO service timed out" }, { status: 504 });
+    }
+    console.error("[leo-push] Could not reach LEO:", err);
     return Response.json({ error: "Could not reach LEO" }, { status: 500 });
   }
 }

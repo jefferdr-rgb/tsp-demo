@@ -3,7 +3,14 @@
 // Supports: receipts, invoices, SOPs, incident forms, compliance checklists,
 //           business cards, maintenance logs, timesheets, delivery tickets, equipment specs.
 
+import { requireAuth } from "../../_lib/api-auth";
+import { validateImageBlock } from "../../_lib/sanitize";
+
 export const maxDuration = 60; // Pro plan — 60s timeout for large batches
+
+const MAX_BATCH_SIZE = 10;
+const CLASSIFY_TIMEOUT_MS = 15_000;
+const EXTRACT_TIMEOUT_MS = 45_000;
 
 const DOC_TYPES = {
   receipt: { label: "Receipt / Expense", icon: "🧾", color: "#c49b2a" },
@@ -43,10 +50,11 @@ async function classifyDocument(imageBlock, apiKey) {
         ],
       }],
     }),
+    signal: AbortSignal.timeout(CLASSIFY_TIMEOUT_MS),
   });
 
   const data = await response.json();
-  if (data.error) throw new Error(data.error.message);
+  if (!response.ok) throw new Error("Classification failed");
 
   const raw = (data.content?.[0]?.text || "other").trim().toLowerCase().replace(/[^a-z_]/g, "");
   return DOC_TYPES[raw] ? raw : "other";
@@ -381,19 +389,25 @@ async function extractData(imageBlock, docType, apiKey) {
       }],
       tool_choice: { type: "tool", name: config.tool },
     }),
+    signal: AbortSignal.timeout(EXTRACT_TIMEOUT_MS),
   });
 
   const data = await response.json();
-  if (data.error) throw new Error(data.error.message);
+  if (!response.ok) throw new Error("Extraction failed");
 
   const toolResult = data.content?.find(b => b.type === "tool_use" && b.name === config.tool);
-  if (!toolResult?.input) throw new Error("Failed to extract document data");
+  if (!toolResult?.input) throw new Error("Extraction returned no data");
 
   return toolResult.input;
 }
 
 // ── Main handler ────────────────────────────────────────────────────────────
 export async function POST(request) {
+  // C-1: auth gate — applies to both internal and external (Apps Script) callers.
+  // External callers must include x-internal-secret in addition to any app-specific headers.
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return Response.json({ error: "API key not configured" }, { status: 500 });
 
@@ -404,29 +418,33 @@ export async function POST(request) {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  // Accept single document or batch
-  // Each doc: { imageBlock: { type: "image", source: {...} }, fileName?: string }
   const documents = body.documents || (body.imageBlock ? [{ imageBlock: body.imageBlock, fileName: body.fileName }] : []);
 
   if (documents.length === 0) {
     return Response.json({ error: "No documents provided" }, { status: 400 });
   }
 
-  // Verify auth for external callers (Apps Script)
-  const authHeader = request.headers.get("x-rhonda-key");
-  const isExternal = !!authHeader;
-  if (isExternal && authHeader !== process.env.RHONDA_SCAN_KEY) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (documents.length > MAX_BATCH_SIZE) {
+    return Response.json({ error: `Batch too large (max ${MAX_BATCH_SIZE} documents)` }, { status: 400 });
+  }
+
+  // H-1: validate all image blocks before any API calls
+  for (let i = 0; i < documents.length; i++) {
+    const doc = documents[i];
+    if (!doc.imageBlock) {
+      return Response.json({ error: `Document ${i + 1} missing imageBlock` }, { status: 400 });
+    }
+    const imgError = validateImageBlock(doc.imageBlock);
+    if (imgError) {
+      return Response.json({ error: `Document ${i + 1}: ${imgError}` }, { status: 400 });
+    }
   }
 
   const results = [];
 
   for (const doc of documents) {
     try {
-      // Step 1: Classify
       const docType = await classifyDocument(doc.imageBlock, apiKey);
-
-      // Step 2: Extract
       const extracted = await extractData(doc.imageBlock, docType, apiKey);
 
       results.push({
@@ -437,18 +455,19 @@ export async function POST(request) {
         status: "success",
       });
     } catch (err) {
+      // H-5: do not leak err.message to caller — log internally
+      console.error("[scan-processor] Doc processing error:", err?.message);
       results.push({
         fileName: doc.fileName || `Document ${results.length + 1}`,
         docType: "other",
         docTypeInfo: DOC_TYPES.other,
         extracted: null,
         status: "error",
-        error: err.message,
+        error: "Processing failed",
       });
     }
   }
 
-  // Generate spreadsheet data for financial documents
   const financialDocs = results.filter(r =>
     r.status === "success" && (r.docType === "receipt" || r.docType === "invoice")
   );

@@ -1,7 +1,8 @@
-// ── Translation API ──────────────────────────────────────────────────────────
-// Claude translates content while preserving SOP structure, safety warnings,
-// and technical terms. Supports any target language.
+// app/api/translate/route.js
+import { requireAuth } from "../../_lib/api-auth";
 
+// C-5: LANG_NAMES is the authoritative allowlist — targetLang/sourceLang must be a key
+// in this map before they are used. The map value (not the raw param) goes into the prompt.
 const LANG_NAMES = {
   en: "English",
   es: "Spanish",
@@ -17,34 +18,51 @@ const LANG_NAMES = {
   tl: "Tagalog",
 };
 
+const MAX_TEXT_LENGTH = 10_000;
+const FETCH_TIMEOUT_MS = 30_000;
+
 export async function POST(request) {
-  const { text, targetLang, sourceLang = "en", context = "" } = await request.json();
+  // C-1: auth gate
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const { text, targetLang, sourceLang = "en" } = body;
+  // context: field exists in some callers but is not currently used in the translation
+  // prompt — intentionally excluded to avoid silently accepting unused input.
 
   if (!text || !targetLang) {
-    return Response.json({ error: "Missing 'text' or 'targetLang'" }, { status: 400 });
+    return Response.json({ error: "Missing text or targetLang" }, { status: 400 });
+  }
+
+  // H-2: length cap
+  if (text.length > MAX_TEXT_LENGTH) {
+    return Response.json({ error: "text too long (max 10,000 characters)" }, { status: 400 });
+  }
+
+  // C-5: enforce allowlist before any use — reject unknown codes outright
+  if (!LANG_NAMES[targetLang]) {
+    return Response.json({ error: "Unsupported targetLang" }, { status: 400 });
+  }
+  if (!LANG_NAMES[sourceLang]) {
+    return Response.json({ error: "Unsupported sourceLang" }, { status: 400 });
   }
 
   if (targetLang === sourceLang) {
     return Response.json({ translated: text, targetLang, sourceLang });
   }
 
-  const targetName = LANG_NAMES[targetLang] || targetLang;
-  const sourceName = LANG_NAMES[sourceLang] || sourceLang;
+  // C-5: use the map value — never interpolate the raw user-supplied lang code into the prompt
+  const targetName = LANG_NAMES[targetLang];
+  const sourceName = LANG_NAMES[sourceLang];
 
-  const systemPrompt = `You are a professional industrial translator for a manufacturing company. Translate the following ${sourceName} text into ${targetName}.
-
-CRITICAL RULES:
-- Preserve ALL markdown formatting (headers, bullet points, checkboxes, horizontal rules)
-- Preserve ALL safety warnings (⚠️ symbols must remain)
-- Preserve ALL numbers, measurements, temperatures, and units exactly as-is
-- Preserve technical terms that don't have standard translations — keep them in the original language with a parenthetical translation if helpful
-- Preserve [VERIFY] tags
-- Preserve checkbox format: - [ ] must remain as - [ ]
-- Use the formal/professional register appropriate for workplace safety documents
-- For Spanish: use "usted" form, not "tu"
-- For Vietnamese: use professional/formal tone
-- Do NOT add any translator notes or explanations — just output the translated text
-${context ? `\nContext: This is ${context}` : ""}`;
+  const systemPrompt = `You are a professional translator. Translate ${sourceName} to ${targetName}. Return only the translated text, no commentary.`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -60,16 +78,26 @@ ${context ? `\nContext: This is ${context}` : ""}`;
         system: systemPrompt,
         messages: [{ role: "user", content: text }],
       }),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     const data = await response.json();
-    if (data.error) {
-      return Response.json({ error: data.error.message }, { status: 500 });
+
+    if (!response.ok) {
+      console.error("[translate] Anthropic error:", response.status, data?.error);
+      return Response.json({ error: "Translation failed" }, { status: 502 });
     }
 
-    const translated = data.content?.[0]?.text || "";
-    return Response.json({ translated, targetLang, sourceLang });
+    return Response.json({
+      translated: data.content?.[0]?.text || "",
+      targetLang,
+      sourceLang,
+    });
   } catch (err) {
-    return Response.json({ error: err.message }, { status: 500 });
+    if (err.name === "TimeoutError") {
+      return Response.json({ error: "Request timed out" }, { status: 504 });
+    }
+    console.error("[translate] Unexpected error:", err);
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
